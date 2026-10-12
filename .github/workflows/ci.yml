@@ -54,7 +54,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-      - run: dotnet build benchmarks/Kexiva.Benchmarks/Kexiva.Benchmarks.csproj -c Release
+      - name: Restore
+        run: dotnet restore
+      - name: Build benchmarks
+        run: dotnet build benchmarks/Kexiva.Benchmarks/Kexiva.Benchmarks.csproj -c Release --no-restore
