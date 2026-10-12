@@ -3,10 +3,10 @@ using BenchmarkDotNet.Attributes;
 namespace Kexiva.Benchmarks;
 
 [MemoryDiagnoser]
-public class SmokeBenchmark
+internal class SmokeBenchmark
 {
     [Benchmark]
-    public int Placeholder()
+    public static int Placeholder()
     {
         return 42;
     }
