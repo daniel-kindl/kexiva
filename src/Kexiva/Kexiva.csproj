@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Kexiva</AssemblyName>
+    <RootNamespace>Kexiva</RootNamespace>
+    <IsPackable>true</IsPackable>
+    <PackageId>Kexiva</PackageId>
+    <Authors>Daniel Kindl</Authors>
+    <Description>High-performance .NET library providing optimized alternatives to selected standard .NET data-processing APIs.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/daniel-kindl/kexiva</RepositoryUrl>
+  </PropertyGroup>
+</Project>
