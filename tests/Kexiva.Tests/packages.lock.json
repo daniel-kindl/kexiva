@@ -101,6 +101,9 @@
       },
       "kexiva": {
         "type": "Project"
+      },
+      "kexiva.verify": {
+        "type": "Project"
       }
     }
   }

@@ -13,5 +13,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Kexiva\Kexiva.csproj" />
+    <ProjectReference Include="..\..\eng\Kexiva.Verify\Kexiva.Verify.csproj" />
   </ItemGroup>
 </Project>

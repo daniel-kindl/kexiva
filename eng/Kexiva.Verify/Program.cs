@@ -21,7 +21,7 @@ internal static class Program
                 : Path.GetFullPath(args[0], repositoryRoot);
 
             CheckRepositoryPolicies(repositoryRoot);
-            CheckCoverage(resultsDirectory);
+            CheckCoverage(repositoryRoot, resultsDirectory);
             return 0;
         }
         catch (InvalidOperationException exception)
@@ -82,22 +82,7 @@ internal static class Program
         Require(workflowLines.Contains("run: ./eng/verify.sh", StringComparer.Ordinal), "CI must invoke eng/verify.sh.");
         Require(workflowLines.Contains("run: ./eng/verify.ps1", StringComparer.Ordinal), "CI must invoke eng/verify.ps1.");
 
-        foreach (string workflowPath in Directory.EnumerateFiles(Path.Combine(root, ".github", "workflows"), "*.yml"))
-        {
-            foreach (string line in File.ReadLines(workflowPath))
-            {
-                string command = line.Trim();
-                if (command.StartsWith("dotnet restore", StringComparison.Ordinal))
-                {
-                    Require(command.Contains("--locked-mode", StringComparison.Ordinal), $"{Path.GetFileName(workflowPath)} must use locked dependency restore.");
-                }
-
-                if (command.StartsWith("dotnet build", StringComparison.Ordinal))
-                {
-                    Require(command.Contains("--warnaserror", StringComparison.Ordinal), $"{Path.GetFileName(workflowPath)} must treat build warnings as errors.");
-                }
-            }
-        }
+        CheckWorkflowPolicies(root);
 
         XDocument buildProperties = XDocument.Load(Path.Combine(root, "Directory.Build.props"));
         Require(PropertyIsTrue(buildProperties, "TreatWarningsAsErrors"), "Directory.Build.props must treat warnings as errors.");
@@ -126,6 +111,82 @@ internal static class Program
         }
     }
 
+    internal static void CheckWorkflowPolicies(string root)
+    {
+        foreach (string workflowPath in Directory.EnumerateFiles(Path.Combine(root, ".github", "workflows"), "*.yml"))
+        {
+            foreach (string command in ReadWorkflowCommands(File.ReadAllLines(workflowPath)))
+            {
+                if (command.StartsWith("dotnet restore", StringComparison.Ordinal))
+                {
+                    Require(command.Contains("--locked-mode", StringComparison.Ordinal), $"{Path.GetFileName(workflowPath)} must use locked dependency restore.");
+                }
+
+                if (command.StartsWith("dotnet build", StringComparison.Ordinal))
+                {
+                    Require(command.Contains("--warnaserror", StringComparison.Ordinal), $"{Path.GetFileName(workflowPath)} must treat build warnings as errors.");
+                }
+            }
+        }
+    }
+
+    private static string[] ReadWorkflowCommands(string[] lines)
+    {
+        System.Collections.Generic.List<string> commands = [];
+        int? blockIndent = null;
+        foreach (string line in lines)
+        {
+            string trimmed = line.TrimStart();
+            int indentation = line.Length - trimmed.Length;
+            if (blockIndent is int requiredIndent)
+            {
+                if (trimmed.Length == 0)
+                {
+                    continue;
+                }
+
+                if (indentation > requiredIndent)
+                {
+                    AddCommands(trimmed, commands);
+                    continue;
+                }
+
+                blockIndent = null;
+            }
+
+            string? runValue = trimmed.StartsWith("- run:", StringComparison.Ordinal)
+                ? trimmed[6..].Trim()
+                : trimmed.StartsWith("run:", StringComparison.Ordinal)
+                    ? trimmed[4..].Trim()
+                    : null;
+            if (runValue is null)
+            {
+                continue;
+            }
+
+            if (runValue.StartsWith('|') || runValue.StartsWith('>'))
+            {
+                blockIndent = indentation;
+                continue;
+            }
+
+            AddCommands(runValue, commands);
+        }
+
+        return [.. commands];
+    }
+
+    private static void AddCommands(string commandLine, System.Collections.Generic.List<string> commands)
+    {
+        foreach (string command in commandLine.Split([';', '&'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (command.StartsWith("dotnet ", StringComparison.Ordinal))
+            {
+                commands.Add(command);
+            }
+        }
+    }
+
     private static string[] ReadShellCommands(string script)
     {
         return [.. script.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
@@ -148,8 +209,13 @@ internal static class Program
             .Replace("\"$resultsDirectory\"", "<results>", StringComparison.Ordinal);
     }
 
-    private static void CheckCoverage(string resultsDirectory)
+    internal static void CheckCoverage(string repositoryRoot, string resultsDirectory)
     {
+        string productionDirectory = Path.Combine(repositoryRoot, "src", "Kexiva");
+        string[] productionFiles = [.. Directory.EnumerateFiles(productionDirectory, "*.cs", SearchOption.AllDirectories)
+            .Where(path => !path.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).Contains("obj", StringComparer.Ordinal))
+            .Where(path => !string.Equals(Path.GetFileName(path), "AssemblyInfo.cs", StringComparison.OrdinalIgnoreCase))
+            .Select(path => Path.GetRelativePath(productionDirectory, path).Replace('\\', '/'))];
         string[] reports = Directory.Exists(resultsDirectory)
             ? Directory.GetFiles(resultsDirectory, "coverage.cobertura.xml", SearchOption.AllDirectories)
             : [];
@@ -159,6 +225,7 @@ internal static class Program
         int coveredLines = 0;
         int totalBranches = 0;
         int coveredBranches = 0;
+        System.Collections.Generic.HashSet<string> matchedProductionFiles = new(StringComparer.OrdinalIgnoreCase);
         foreach (string report in reports)
         {
             XDocument document = XDocument.Load(report);
@@ -171,16 +238,19 @@ internal static class Program
             foreach (XElement sourceClass in coverage.Descendants("class"))
             {
                 string sourcePath = ((string?)sourceClass.Attribute("filename") ?? string.Empty).Replace('\\', '/');
-                string[] pathParts = sourcePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
-                bool isProductionSource = pathParts.Length >= 3
-                    && pathParts[^3] == "src"
-                    && pathParts[^2] == "Kexiva"
-                    && !pathParts.Contains("obj", StringComparer.Ordinal)
-                    && !string.Equals(pathParts[^1], "AssemblyInfo.cs", StringComparison.Ordinal);
-                if (!isProductionSource)
+                string? productionFile = productionFiles.FirstOrDefault(file => sourcePath.EndsWith(file, StringComparison.OrdinalIgnoreCase));
+                productionFile ??= productionFiles
+                    .Where(file => string.Equals(Path.GetFileName(file), Path.GetFileName(sourcePath), StringComparison.OrdinalIgnoreCase))
+                    .Take(2)
+                    .Count() == 1
+                    ? productionFiles.First(file => string.Equals(Path.GetFileName(file), Path.GetFileName(sourcePath), StringComparison.OrdinalIgnoreCase))
+                    : null;
+                if (productionFile is null)
                 {
                     continue;
                 }
+
+                matchedProductionFiles.Add(productionFile);
 
                 foreach (XElement sourceLine in sourceClass.Descendants("line"))
                 {
@@ -208,11 +278,14 @@ internal static class Program
             }
         }
 
-        if (totalLines == 0)
+        if (productionFiles.Length == 0)
         {
             Console.WriteLine($"Coverage thresholds are not applicable because the production assembly has {totalLines} coverable source lines.");
             return;
         }
+
+        Require(matchedProductionFiles.Count > 0, "Coverage reports do not map to production source files in src/Kexiva.");
+        Require(totalLines > 0, "Coverage reports map to production files but contain no coverable source lines.");
 
         double lineCoverage = (double)coveredLines / totalLines;
         double branchCoverage = totalBranches == 0 ? 0 : (double)coveredBranches / totalBranches;
