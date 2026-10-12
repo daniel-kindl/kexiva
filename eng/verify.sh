@@ -11,7 +11,7 @@ dotnet restore --locked-mode
 echo "Building Release..."
 dotnet build -c Release --no-restore
 
-# 3-5. Zero warnings, static analysis, formatting (enforced via build props)
+# 3-5. Zero warnings, static analysis, formatting
 echo "Format and style verification..."
 dotnet format --verify-no-changes --severity info --no-restore
 
@@ -23,16 +23,17 @@ dotnet test tests/Kexiva.Tests/Kexiva.Tests.csproj -c Release --no-build --colle
 echo "Running compatibility tests..."
 dotnet test tests/Kexiva.Compatibility.Tests/Kexiva.Compatibility.Tests.csproj -c Release --no-build
 
-# 8. Architecture checks (placeholder — expand with NetArchTest later)
-echo "Architecture checks: placeholder passed"
+# 8. Architecture checks
+echo "Architecture checks: NOT CONFIGURED — expand with NetArchTest before declaring M0 complete"
+exit 1
 
-# 9. Coverage thresholds (placeholder — add thresholds when production code exists)
-echo "Coverage: reports generated under TestResults"
+# 9. Coverage thresholds
+# echo "Coverage thresholds: NOT CONFIGURED"
 
-# 10. Public API checks (placeholder)
-echo "Public API checks: placeholder"
+# 10. Public API checks
+# echo "Public API checks: NOT CONFIGURED"
 
-# 11. Repository policy checks (placeholder)
-echo "Repository policy checks: placeholder"
+# 11. Repository policy checks
+# echo "Repository policy checks: NOT CONFIGURED"
 
 echo "=== Verification succeeded ==="
