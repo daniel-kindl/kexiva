@@ -4,8 +4,14 @@ High-performance .NET library providing optimized alternatives to selected stand
 
 **Core philosophy: Same API. Same behavior. Better performance.**
 
-Status: M0 — Engineering Foundation (in progress).
+Status: M0 — Engineering Foundation (hardening in progress).
+
+## Building & Testing
+
+```bash
+./eng/verify.sh
+```
 
 ## License
 
-MIT (proposed).
+MIT. See [LICENSE](LICENSE).
