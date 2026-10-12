@@ -1,5 +1,5 @@
 * text=auto
-*.cs text diff=csharp
+*.cs text eol=lf diff=csharp
 *.csproj text
 *.props text
 *.slnx text
