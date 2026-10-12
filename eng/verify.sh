@@ -1,39 +1,30 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repository_root"
+
+results_directory="TestResults/verification-$(date +%s)-$$"
+mkdir -p "$results_directory"
+
 echo "=== Kexiva Verification ==="
 
-# 1. Locked dependency restore
-echo "Restoring dependencies..."
+echo "Restoring locked dependencies..."
 dotnet restore --locked-mode
 
-# 2. Release build
-echo "Building Release..."
-dotnet build -c Release --no-restore
+echo "Building Release with warnings as errors..."
+dotnet build -c Release --no-restore --warnaserror
 
-# 3-5. Zero warnings, static analysis, formatting
-echo "Format and style verification..."
+echo "Checking formatting and analyzers..."
 dotnet format --verify-no-changes --severity info --no-restore
 
-# 6. Unit tests
-echo "Running unit tests..."
-dotnet test tests/Kexiva.Tests/Kexiva.Tests.csproj -c Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults
+echo "Running unit and architecture tests with coverage..."
+dotnet test tests/Kexiva.Tests/Kexiva.Tests.csproj -c Release --no-build --settings eng/coverage.runsettings --collect:"XPlat Code Coverage" --results-directory "$results_directory"
 
-# 7. Compatibility tests
-echo "Running compatibility tests..."
+echo "Running public API compatibility tests..."
 dotnet test tests/Kexiva.Compatibility.Tests/Kexiva.Compatibility.Tests.csproj -c Release --no-build
 
-# 8. Architecture checks
-echo "Architecture checks: NOT CONFIGURED — expand with NetArchTest before declaring M0 complete"
-exit 1
-
-# 9. Coverage thresholds
-# echo "Coverage thresholds: NOT CONFIGURED"
-
-# 10. Public API checks
-# echo "Public API checks: NOT CONFIGURED"
-
-# 11. Repository policy checks
-# echo "Repository policy checks: NOT CONFIGURED"
+echo "Checking coverage and repository policies..."
+dotnet run --project eng/Kexiva.Verify/Kexiva.Verify.csproj -c Release --no-build -- "$results_directory"
 
 echo "=== Verification succeeded ==="

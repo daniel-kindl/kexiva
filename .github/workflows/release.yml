@@ -23,8 +23,9 @@ jobs:
 
       - name: Build and pack
         run: |
-          dotnet build -c Release
-          dotnet pack src/Kexiva/Kexiva.csproj -c Release -o ./artifacts
+          dotnet restore --locked-mode
+          dotnet build -c Release --no-restore --warnaserror
+          dotnet pack src/Kexiva/Kexiva.csproj -c Release --no-build --no-restore -o ./artifacts
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

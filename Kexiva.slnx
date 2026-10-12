@@ -3,4 +3,5 @@
   <Project Path="tests/Kexiva.Tests/Kexiva.Tests.csproj" />
   <Project Path="tests/Kexiva.Compatibility.Tests/Kexiva.Compatibility.Tests.csproj" />
   <Project Path="benchmarks/Kexiva.Benchmarks/Kexiva.Benchmarks.csproj" />
+  <Project Path="eng/Kexiva.Verify/Kexiva.Verify.csproj" />
 </Solution>
