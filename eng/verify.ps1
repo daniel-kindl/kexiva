@@ -20,9 +20,12 @@ dotnet test tests/Kexiva.Tests/Kexiva.Tests.csproj -c Release --no-build --colle
 Write-Host "Running compatibility tests..."
 dotnet test tests/Kexiva.Compatibility.Tests/Kexiva.Compatibility.Tests.csproj -c Release --no-build
 
-Write-Host "Architecture checks: placeholder passed"
-Write-Host "Coverage: reports generated under TestResults"
-Write-Host "Public API checks: placeholder"
-Write-Host "Repository policy checks: placeholder"
+Write-Host "Architecture checks: NOT CONFIGURED — expand with NetArchTest before declaring M0 complete"
+exit 1
+
+# Remaining checks intentionally not reached until implemented
+# Coverage thresholds: NOT CONFIGURED
+# Public API checks: NOT CONFIGURED
+# Repository policy checks: NOT CONFIGURED
 
 Write-Host "=== Verification succeeded ==="
