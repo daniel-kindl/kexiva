@@ -3,7 +3,7 @@ using BenchmarkDotNet.Attributes;
 namespace Kexiva.Benchmarks;
 
 [MemoryDiagnoser]
-internal class SmokeBenchmark
+internal sealed class SmokeBenchmark
 {
     [Benchmark]
     public static int Placeholder()
