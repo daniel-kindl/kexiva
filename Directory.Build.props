@@ -13,9 +13,4 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
-
-  <!-- Require XML docs for production library public API only. -->
-  <PropertyGroup Condition="'$(IsTestProject)' == 'true' Or '$(MSBuildProjectName)' == 'Kexiva.Verify' Or '$(MSBuildProjectName)' == 'Kexiva.Benchmarks'">
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
-  </PropertyGroup>
 </Project>
