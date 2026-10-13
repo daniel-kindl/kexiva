@@ -13,8 +13,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-      - run: dotnet restore --locked-mode
-      - run: dotnet test -c Release --no-restore --verbosity normal
+
+      - name: Full verification
+        run: ./eng/verify.sh
