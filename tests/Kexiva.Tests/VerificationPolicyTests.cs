@@ -4,8 +4,14 @@ using Xunit;
 
 namespace Kexiva.Tests;
 
+/// <summary>
+/// Tests that enforce verification policy checks for workflows and coverage.
+/// </summary>
 public sealed class VerificationPolicyTests
 {
+    /// <summary>
+    /// Verifies that workflow policy rejects inline restore without locked mode.
+    /// </summary>
     [Fact]
     public void WorkflowPolicy_RejectsInlineRestoreWithoutLockedMode()
     {
@@ -20,6 +26,9 @@ public sealed class VerificationPolicyTests
         Assert.Contains("locked dependency restore", exception.Message, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Verifies that workflow policy rejects block builds without warnings as errors.
+    /// </summary>
     [Fact]
     public void WorkflowPolicy_RejectsBlockBuildWithoutWarningsAsErrors()
     {
@@ -34,6 +43,9 @@ public sealed class VerificationPolicyTests
         Assert.Contains("warnings as errors", exception.Message, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Verifies that coverage recognizes short Cobertura source paths and applies thresholds.
+    /// </summary>
     [Fact]
     public void Coverage_RecognizesShortCoberturaSourcePathAndAppliesThreshold()
     {
@@ -51,6 +63,9 @@ public sealed class VerificationPolicyTests
         Assert.Contains("Line coverage is below", exception.Message, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Verifies that coverage rejects production sources when report paths do not match inventory.
+    /// </summary>
     [Fact]
     public void Coverage_RejectsProductionSourceWhenReportPathsDoNotMatchInventory()
     {
