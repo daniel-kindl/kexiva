@@ -6,8 +6,14 @@ using Xunit;
 
 namespace Kexiva.Compatibility.Tests;
 
+/// <summary>
+/// Tests that verify public API baseline tracking is correctly configured.
+/// </summary>
 public sealed class PublicApiBaselineTests
 {
+    /// <summary>
+    /// Verifies that the production project tracks nullable shipped and unshipped API files.
+    /// </summary>
     [Fact]
     public void ProductionProject_TracksNullableShippedAndUnshippedApiFiles()
     {
