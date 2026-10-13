@@ -7,8 +7,14 @@ using Xunit;
 
 namespace Kexiva.Tests;
 
+/// <summary>
+/// Architecture tests that enforce dependency boundaries and public API constraints.
+/// </summary>
 public sealed class ArchitectureTests
 {
+    /// <summary>
+    /// Verifies that the production assembly does not reference test or benchmark assemblies.
+    /// </summary>
     [Fact]
     public void ProductionAssembly_DoesNotReferenceTestOrBenchmarkAssemblies()
     {
@@ -19,6 +25,9 @@ public sealed class ArchitectureTests
         Assert.DoesNotContain(referencedAssemblies, name => name.Contains("Benchmarks", StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// Verifies that the production project does not contain project references.
+    /// </summary>
     [Fact]
     public void ProductionProject_DoesNotReferenceOtherProjects()
     {
@@ -28,6 +37,9 @@ public sealed class ArchitectureTests
         Assert.Empty(project.Descendants("ProjectReference"));
     }
 
+    /// <summary>
+    /// Verifies that the production project only uses private build infrastructure packages.
+    /// </summary>
     [Fact]
     public void ProductionProject_UsesOnlyPrivateBuildInfrastructure()
     {
@@ -48,6 +60,9 @@ public sealed class ArchitectureTests
         });
     }
 
+    /// <summary>
+    /// Verifies that exported types use the Kexiva namespace.
+    /// </summary>
     [Fact]
     public void ExportedTypes_UseTheLibraryNamespace()
     {
