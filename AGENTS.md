@@ -37,3 +37,10 @@ Authoritative entry point for AI agents contributing to Kexiva.
 - [Engineering scripts](eng/README.md)
 
 Agents must follow this document.
+
+## Engineering skills and controlled English
+- Follow [agent workflow ownership](docs/standards/agent-skills.md). Repository checks and GitHub Issues remain authoritative over external skill guidance.
+- Use Matt Pocock's engineering workflow for requirements, tickets, implementation, TDD, and code review when installed.
+- Use Poteto pstack for optional architecture analysis, benchmark investigations, and milestone knowledge transfer. Do not run competing orchestration skills for the same task.
+- Follow [technical writing guidance](docs/standards/technical-writing.md) for documentation, XML docs, issue text, and PRs. ASD-STE100 is an inspiration; do not claim certified or complete compliance.
+- External skills are optional local tooling. Check their availability and exact documented names before use; do not block normal issue delivery when unavailable.
