@@ -145,13 +145,46 @@ public sealed class VerificationPolicyTests
         Assert.Contains("NuGet audit", exception.Message, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Verifies that the build policy rejects each missing or weakened ADR 0002 build property.
+    /// </summary>
+    /// <param name="required">The required element that is replaced.</param>
+    /// <param name="replacement">The weaker element, or an empty string for none.</param>
+    /// <param name="expectedMessage">Part of the expected failure message.</param>
+    [Theory]
+    [InlineData("<MSBuildTreatWarningsAsErrors>true</MSBuildTreatWarningsAsErrors>", "", "MSBuild warnings as errors")]
+    [InlineData("<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>", "<EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>", "code style")]
+    [InlineData("<AnalysisMode>All</AnalysisMode>", "<AnalysisMode>Recommended</AnalysisMode>", "AnalysisMode")]
+    [InlineData("<NuGetAuditMode>all</NuGetAuditMode>", "<NuGetAuditMode>direct</NuGetAuditMode>", "NuGetAuditMode")]
+    [InlineData("<NuGetAuditLevel>low</NuGetAuditLevel>", "<NuGetAuditLevel>high</NuGetAuditLevel>", "NuGetAuditLevel")]
+    [InlineData("<RestoreLockedMode Condition=\"'$(CI)' == 'true'\">true</RestoreLockedMode>", "", "RestoreLockedMode")]
+    [InlineData("<RestoreLockedMode Condition=\"'$(CI)' == 'true'\">true</RestoreLockedMode>", "<RestoreLockedMode Condition=\"'$(Other)' == 'true'\">true</RestoreLockedMode>", "RestoreLockedMode")]
+    [InlineData("<ContinuousIntegrationBuild Condition=\"'$(CI)' == 'true'\">true</ContinuousIntegrationBuild>", "", "ContinuousIntegrationBuild")]
+    public void BuildProperties_RejectsMissingOrWeakenedBuildPolicy(string required, string replacement, string expectedMessage)
+    {
+        using TemporaryDirectory repository = new();
+        WriteBuildProperties(repository.Path, _requiredProperties.Replace(required, replacement, StringComparison.Ordinal));
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => Verify.Program.CheckBuildProperties(repository.Path));
+
+        Assert.Contains(expectedMessage, exception.Message, StringComparison.Ordinal);
+    }
+
     private static readonly string[] _allRunners = ["os: ubuntu-24.04", "os: windows-2025", "os: macos-15", "os: macos-15-intel"];
 
     private const string _requiredProperties =
         "<TreatWarningsAsErrors>true</TreatWarningsAsErrors>"
         + "<EnableNETAnalyzers>true</EnableNETAnalyzers>"
         + "<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>"
-        + "<NuGetAudit>true</NuGetAudit>";
+        + "<NuGetAudit>true</NuGetAudit>"
+        + "<MSBuildTreatWarningsAsErrors>true</MSBuildTreatWarningsAsErrors>"
+        + "<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>"
+        + "<AnalysisMode>All</AnalysisMode>"
+        + "<NuGetAuditMode>all</NuGetAuditMode>"
+        + "<NuGetAuditLevel>low</NuGetAuditLevel>"
+        + "<RestoreLockedMode Condition=\"'$(CI)' == 'true'\">true</RestoreLockedMode>"
+        + "<ContinuousIntegrationBuild Condition=\"'$(CI)' == 'true'\">true</ContinuousIntegrationBuild>";
 
     private static void WriteCiWorkflow(string root, string[] runners)
     {

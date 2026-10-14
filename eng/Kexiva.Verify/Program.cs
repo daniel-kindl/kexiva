@@ -123,6 +123,26 @@ internal static class Program
         Require(PropertyIsTrue(buildProperties, "EnableNETAnalyzers"), "Directory.Build.props must enable .NET analyzers.");
         Require(PropertyIsTrue(buildProperties, "RestorePackagesWithLockFile"), "Directory.Build.props must enable NuGet lock files.");
         Require(PropertyIsTrue(buildProperties, "NuGetAudit"), "Directory.Build.props must enable NuGet audit.");
+        Require(PropertyIsTrue(buildProperties, "MSBuildTreatWarningsAsErrors"), "Directory.Build.props must treat MSBuild warnings as errors.");
+        Require(PropertyIsTrue(buildProperties, "EnforceCodeStyleInBuild"), "Directory.Build.props must enforce code style in build.");
+        Require(PropertyEquals(buildProperties, "AnalysisMode", "All"), "Directory.Build.props must set AnalysisMode to All.");
+        Require(PropertyEquals(buildProperties, "NuGetAuditMode", "all"), "Directory.Build.props must set NuGetAuditMode to all.");
+        Require(PropertyEquals(buildProperties, "NuGetAuditLevel", "low"), "Directory.Build.props must set NuGetAuditLevel to low.");
+        Require(PropertyIsTrueInCi(buildProperties, "RestoreLockedMode"), "Directory.Build.props must enable RestoreLockedMode in CI.");
+        Require(PropertyIsTrueInCi(buildProperties, "ContinuousIntegrationBuild"), "Directory.Build.props must enable ContinuousIntegrationBuild in CI.");
+    }
+
+    private static bool PropertyEquals(XDocument document, string propertyName, string expected)
+    {
+        return string.Equals((string?)document.Descendants(propertyName).FirstOrDefault(), expected, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool PropertyIsTrueInCi(XDocument document, string propertyName)
+    {
+        return document.Descendants(propertyName).Any(element =>
+            string.Equals((string)element, "true", StringComparison.OrdinalIgnoreCase)
+            && (element.Attribute("Condition") is null
+                || string.Equals(((string?)element.Attribute("Condition"))?.Replace(" ", string.Empty, StringComparison.Ordinal), "'$(CI)'=='true'", StringComparison.Ordinal)));
     }
 
     internal static void CheckWorkflowPolicies(string root)
