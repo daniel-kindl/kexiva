@@ -14,8 +14,10 @@ echo "=== Kexiva Verification ==="
 echo "Checking prerequisites..."
 command -v git >/dev/null 2>&1 || { echo "git is not on PATH (Nerdbank.GitVersioning needs git history)." >&2; false; }
 command -v dotnet >/dev/null 2>&1 || { echo "dotnet is not on PATH. Install the SDK version in global.json." >&2; false; }
-echo "Active SDK: $(dotnet --version) (global.json pins the SDK; rollForward latestPatch)"
-[ "$(git rev-parse --is-shallow-repository)" = "false" ] || { echo "Shallow clone. Nerdbank.GitVersioning needs full history (fetch-depth: 0)." >&2; false; }
+active_sdk="$(dotnet --version)" || { echo "No installed SDK satisfies global.json." >&2; false; }
+echo "Active SDK: ${active_sdk} (global.json pins the SDK; rollForward latestPatch)"
+shallow_repository="$(git rev-parse --is-shallow-repository)" || { echo "git rev-parse failed. Run the script inside the Kexiva git work tree." >&2; false; }
+[ "$shallow_repository" = "false" ] || { echo "Shallow clone. Nerdbank.GitVersioning needs full history (fetch-depth: 0)." >&2; false; }
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
 export DOTNET_NOLOGO=1
 

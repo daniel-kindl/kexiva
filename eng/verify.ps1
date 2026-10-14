@@ -23,7 +23,9 @@ if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) { throw "dotnet is 
 $activeSdk = & dotnet --version
 if ($LASTEXITCODE -ne 0) { throw "No installed SDK satisfies global.json." }
 Write-Host "Active SDK: $activeSdk (global.json pins the SDK; rollForward latestPatch)"
-if ((& git rev-parse --is-shallow-repository) -ne "false") { throw "Shallow clone. Nerdbank.GitVersioning needs full history (fetch-depth: 0)." }
+$shallowRepository = & git rev-parse --is-shallow-repository
+if ($LASTEXITCODE -ne 0) { throw "git rev-parse failed. Run the script inside the Kexiva git work tree." }
+if ($shallowRepository -ne "false") { throw "Shallow clone. Nerdbank.GitVersioning needs full history (fetch-depth: 0)." }
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = "1"
 $env:DOTNET_NOLOGO = "1"
 
