@@ -1,0 +1,31 @@
+name: Feature
+description: A new API that matches a .NET API.
+title: "feat: "
+labels: ["type:feature", "status:ready"]
+body:
+  - type: textarea
+    id: api
+    attributes:
+      label: .NET API to match
+      description: The exact .NET API and its documented behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What is in scope and what is out of scope.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      value: "- [ ] Differential tests against .NET\n- [ ] Public API baseline updated\n- [ ] "
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Blocking issues (#N) and new packages with licenses.

@@ -83,6 +83,125 @@ public sealed class VerificationPolicyTests
         Assert.Contains("do not map to production source files", exception.Message, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Verifies that the CI policy accepts a workflow with all four runners.
+    /// </summary>
+    [Fact]
+    public void CiWorkflow_AcceptsAllFourRunners()
+    {
+        using TemporaryDirectory repository = new();
+        WriteCiWorkflow(repository.Path, _allRunners);
+
+        Verify.Program.CheckCiWorkflow(repository.Path);
+    }
+
+    /// <summary>
+    /// Verifies that the CI policy rejects a workflow that misses any one of the four runners.
+    /// </summary>
+    /// <param name="missingRunner">The runner line that is removed.</param>
+    [Theory]
+    [InlineData("os: ubuntu-24.04")]
+    [InlineData("os: windows-2025")]
+    [InlineData("os: macos-15")]
+    [InlineData("os: macos-15-intel")]
+    public void CiWorkflow_RejectsMissingRunner(string missingRunner)
+    {
+        using TemporaryDirectory repository = new();
+        WriteCiWorkflow(repository.Path, [.. Array.FindAll(_allRunners, runner => runner != missingRunner)]);
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => Verify.Program.CheckCiWorkflow(repository.Path));
+
+        Assert.Contains($"missing '{missingRunner}'", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Verifies that the build policy accepts the repository Directory.Build.props.
+    /// </summary>
+    [Fact]
+    public void BuildProperties_AcceptsRepositoryConfiguration()
+    {
+        using TemporaryDirectory repository = new();
+        WriteBuildProperties(repository.Path, _requiredProperties);
+
+        Verify.Program.CheckBuildProperties(repository.Path);
+    }
+
+    /// <summary>
+    /// Verifies that the build policy rejects a missing or disabled NuGet audit.
+    /// </summary>
+    /// <param name="nuGetAudit">The NuGetAudit element, or an empty string for none.</param>
+    [Theory]
+    [InlineData("")]
+    [InlineData("<NuGetAudit>false</NuGetAudit>")]
+    public void BuildProperties_RejectsMissingOrDisabledNuGetAudit(string nuGetAudit)
+    {
+        using TemporaryDirectory repository = new();
+        WriteBuildProperties(repository.Path, _requiredProperties.Replace("<NuGetAudit>true</NuGetAudit>", nuGetAudit, StringComparison.Ordinal));
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => Verify.Program.CheckBuildProperties(repository.Path));
+
+        Assert.Contains("NuGet audit", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Verifies that the build policy rejects each missing or weakened ADR 0002 build property.
+    /// </summary>
+    /// <param name="required">The required element that is replaced.</param>
+    /// <param name="replacement">The weaker element, or an empty string for none.</param>
+    /// <param name="expectedMessage">Part of the expected failure message.</param>
+    [Theory]
+    [InlineData("<MSBuildTreatWarningsAsErrors>true</MSBuildTreatWarningsAsErrors>", "", "MSBuild warnings as errors")]
+    [InlineData("<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>", "<EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>", "code style")]
+    [InlineData("<AnalysisMode>All</AnalysisMode>", "<AnalysisMode>Recommended</AnalysisMode>", "AnalysisMode")]
+    [InlineData("<NuGetAuditMode>all</NuGetAuditMode>", "<NuGetAuditMode>direct</NuGetAuditMode>", "NuGetAuditMode")]
+    [InlineData("<NuGetAuditLevel>low</NuGetAuditLevel>", "<NuGetAuditLevel>high</NuGetAuditLevel>", "NuGetAuditLevel")]
+    [InlineData("<RestoreLockedMode Condition=\"'$(CI)' == 'true'\">true</RestoreLockedMode>", "", "RestoreLockedMode")]
+    [InlineData("<RestoreLockedMode Condition=\"'$(CI)' == 'true'\">true</RestoreLockedMode>", "<RestoreLockedMode Condition=\"'$(Other)' == 'true'\">true</RestoreLockedMode>", "RestoreLockedMode")]
+    [InlineData("<ContinuousIntegrationBuild Condition=\"'$(CI)' == 'true'\">true</ContinuousIntegrationBuild>", "", "ContinuousIntegrationBuild")]
+    public void BuildProperties_RejectsMissingOrWeakenedBuildPolicy(string required, string replacement, string expectedMessage)
+    {
+        using TemporaryDirectory repository = new();
+        WriteBuildProperties(repository.Path, _requiredProperties.Replace(required, replacement, StringComparison.Ordinal));
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => Verify.Program.CheckBuildProperties(repository.Path));
+
+        Assert.Contains(expectedMessage, exception.Message, StringComparison.Ordinal);
+    }
+
+    private static readonly string[] _allRunners = ["os: ubuntu-24.04", "os: windows-2025", "os: macos-15", "os: macos-15-intel"];
+
+    private const string _requiredProperties =
+        "<TreatWarningsAsErrors>true</TreatWarningsAsErrors>"
+        + "<EnableNETAnalyzers>true</EnableNETAnalyzers>"
+        + "<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>"
+        + "<NuGetAudit>true</NuGetAudit>"
+        + "<MSBuildTreatWarningsAsErrors>true</MSBuildTreatWarningsAsErrors>"
+        + "<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>"
+        + "<AnalysisMode>All</AnalysisMode>"
+        + "<NuGetAuditMode>all</NuGetAuditMode>"
+        + "<NuGetAuditLevel>low</NuGetAuditLevel>"
+        + "<RestoreLockedMode Condition=\"'$(CI)' == 'true'\">true</RestoreLockedMode>"
+        + "<ContinuousIntegrationBuild Condition=\"'$(CI)' == 'true'\">true</ContinuousIntegrationBuild>";
+
+    private static void WriteCiWorkflow(string root, string[] runners)
+    {
+        string workflows = Path.Combine(root, ".github", "workflows");
+        Directory.CreateDirectory(workflows);
+        string matrix = string.Concat(Array.ConvertAll(runners, runner => $"          - {runner}\n"));
+        File.WriteAllText(
+            Path.Combine(workflows, "ci.yml"),
+            "jobs:\n  verify:\n    strategy:\n      matrix:\n        include:\n" + matrix.Replace("- os:", "  os:", StringComparison.Ordinal)
+            + "    steps:\n      - name: Verify (bash)\n        run: ./eng/verify.sh\n      - name: Verify (PowerShell)\n        run: ./eng/verify.ps1\n");
+    }
+
+    private static void WriteBuildProperties(string root, string properties)
+    {
+        File.WriteAllText(Path.Combine(root, "Directory.Build.props"), $"<Project><PropertyGroup>{properties}</PropertyGroup></Project>");
+    }
+
     private static void WriteCoverageReport(string resultsDirectory, string sourcePath, string line)
     {
         string report = $"<coverage><packages><package name=\"Kexiva\"><classes><class filename=\"{sourcePath}\"><lines>{line}</lines></class></classes></package></packages></coverage>";

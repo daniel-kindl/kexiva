@@ -2,62 +2,114 @@ name: CI
 
 on:
   pull_request:
+    branches: [main, dev]
   push:
-    branches: [main]
+    branches: [main, dev]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+  CI: "true"
+
 jobs:
-  build-and-test:
+  verify:
+    name: verify (${{ matrix.name }})
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        include:
+          - name: linux-x64
+            os: ubuntu-24.04
+          - name: windows-x64
+            os: windows-2025
+          - name: macos-arm64
+            os: macos-15
+          - name: macos-x64
+            os: macos-15-intel
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+      - name: Setup .NET (version from global.json)
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: '10.0.x'
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
 
-      - name: Verify on Linux
-        if: runner.os == 'Linux'
+      - name: Verify (bash)
+        if: runner.os != 'Windows'
+        shell: bash
         run: ./eng/verify.sh
 
-      - name: Verify on Windows
+      - name: Verify (PowerShell)
         if: runner.os == 'Windows'
         shell: pwsh
         run: ./eng/verify.ps1
 
-      - name: Upload coverage
-        uses: actions/upload-artifact@v4
+      - name: Upload test results and coverage
         if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: coverage
-          path: TestResults
+          name: test-results-${{ matrix.name }}
+          path: TestResults/
+          if-no-files-found: warn
+          retention-days: 14
+
+  compile-benchmarks:
+    name: compile-benchmarks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup .NET (version from global.json)
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore --locked-mode
+
+      - name: Build benchmarks
+        run: dotnet build benchmarks/Kexiva.Benchmarks/Kexiva.Benchmarks.csproj -c Release --no-restore --warnaserror
 
   pr-title:
+    name: pr-title (Conventional Commits)
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
     steps:
-      - uses: amannn/action-semantic-pull-request@v5
+      - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  compile-benchmarks:
-    runs-on: ubuntu-latest
+  dependency-review:
+    name: dependency-review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
-          fetch-depth: 0
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
-      - name: Restore
-        run: dotnet restore --locked-mode
-      - name: Build benchmarks
-        run: dotnet build benchmarks/Kexiva.Benchmarks/Kexiva.Benchmarks.csproj -c Release --no-restore --warnaserror
+          fail-on-severity: low
+          deny-licenses: GPL-2.0-only, GPL-3.0-only, AGPL-3.0-only

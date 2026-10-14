@@ -7,31 +7,58 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+  CI: "true"
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Check release ref
+        shell: bash
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          case "$REF" in
+            refs/heads/main|refs/tags/v*) echo "Release ref: $REF" ;;
+            *) echo "::error::Release runs only from main or a v* tag (got $REF)." >&2; false ;;
+          esac
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
-      - uses: actions/setup-dotnet@v4
+      - name: Setup .NET (version from global.json)
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: '10.0.x'
+          global-json-file: global.json
 
-      - name: Build and pack
+      - name: Verify
+        shell: bash
+        run: ./eng/verify.sh
+
+      - name: Pack
         run: |
-          dotnet restore --locked-mode
-          dotnet build -c Release --no-restore --warnaserror
           dotnet pack src/Kexiva/Kexiva.csproj -c Release --no-build --no-restore -o ./artifacts
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           files: artifacts/*.nupkg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # NuGet publish requires secrets and is not automatic in M0
+      # NuGet publish requires secrets and is not automatic in M0.

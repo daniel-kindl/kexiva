@@ -1,0 +1,23 @@
+name: Engineering task
+description: Tooling, CI, documentation, or infrastructure.
+title: "chore: "
+labels: ["type:chore", "status:ready"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Objective
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      value: "- [ ] "
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification steps
+      description: How a reviewer checks the result.

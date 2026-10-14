@@ -76,18 +76,9 @@ internal static class Program
             Require(!windowsScript.Contains(marker, StringComparison.OrdinalIgnoreCase), $"eng/verify.ps1 contains forbidden marker '{marker}'.");
         }
 
-        string workflow = File.ReadAllText(Path.Combine(root, ".github", "workflows", "ci.yml"));
-        string[] workflowLines = workflow.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        Require(workflowLines.Contains("os: [ubuntu-latest, windows-latest]", StringComparer.Ordinal), "CI must run on Linux and Windows.");
-        Require(workflowLines.Contains("run: ./eng/verify.sh", StringComparer.Ordinal), "CI must invoke eng/verify.sh.");
-        Require(workflowLines.Contains("run: ./eng/verify.ps1", StringComparer.Ordinal), "CI must invoke eng/verify.ps1.");
-
+        CheckCiWorkflow(root);
         CheckWorkflowPolicies(root);
-
-        XDocument buildProperties = XDocument.Load(Path.Combine(root, "Directory.Build.props"));
-        Require(PropertyIsTrue(buildProperties, "TreatWarningsAsErrors"), "Directory.Build.props must treat warnings as errors.");
-        Require(PropertyIsTrue(buildProperties, "EnableNETAnalyzers"), "Directory.Build.props must enable .NET analyzers.");
-        Require(PropertyIsTrue(buildProperties, "RestorePackagesWithLockFile"), "Directory.Build.props must enable NuGet lock files.");
+        CheckBuildProperties(root);
 
         XDocument packageProperties = XDocument.Load(Path.Combine(root, "Directory.Packages.props"));
         XElement[] packageVersions = [.. packageProperties.Descendants("PackageVersion")];
@@ -109,6 +100,49 @@ internal static class Program
                 Require(packageReference.Attribute("Version") is null, $"{Path.GetRelativePath(root, projectPath)} must use centrally managed package versions.");
             }
         }
+    }
+
+    internal static void CheckCiWorkflow(string root)
+    {
+        string workflow = File.ReadAllText(Path.Combine(root, ".github", "workflows", "ci.yml"));
+        string[] workflowLines = workflow.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        string[] requiredRunners = ["os: ubuntu-24.04", "os: windows-2025", "os: macos-15", "os: macos-15-intel"];
+        foreach (string runner in requiredRunners)
+        {
+            Require(workflowLines.Contains(runner, StringComparer.Ordinal), $"CI must run on Linux, Windows, macOS ARM64, and macOS x64 (missing '{runner}').");
+        }
+
+        Require(workflowLines.Contains("run: ./eng/verify.sh", StringComparer.Ordinal), "CI must invoke eng/verify.sh.");
+        Require(workflowLines.Contains("run: ./eng/verify.ps1", StringComparer.Ordinal), "CI must invoke eng/verify.ps1.");
+    }
+
+    internal static void CheckBuildProperties(string root)
+    {
+        XDocument buildProperties = XDocument.Load(Path.Combine(root, "Directory.Build.props"));
+        Require(PropertyIsTrue(buildProperties, "TreatWarningsAsErrors"), "Directory.Build.props must treat warnings as errors.");
+        Require(PropertyIsTrue(buildProperties, "EnableNETAnalyzers"), "Directory.Build.props must enable .NET analyzers.");
+        Require(PropertyIsTrue(buildProperties, "RestorePackagesWithLockFile"), "Directory.Build.props must enable NuGet lock files.");
+        Require(PropertyIsTrue(buildProperties, "NuGetAudit"), "Directory.Build.props must enable NuGet audit.");
+        Require(PropertyIsTrue(buildProperties, "MSBuildTreatWarningsAsErrors"), "Directory.Build.props must treat MSBuild warnings as errors.");
+        Require(PropertyIsTrue(buildProperties, "EnforceCodeStyleInBuild"), "Directory.Build.props must enforce code style in build.");
+        Require(PropertyEquals(buildProperties, "AnalysisMode", "All"), "Directory.Build.props must set AnalysisMode to All.");
+        Require(PropertyEquals(buildProperties, "NuGetAuditMode", "all"), "Directory.Build.props must set NuGetAuditMode to all.");
+        Require(PropertyEquals(buildProperties, "NuGetAuditLevel", "low"), "Directory.Build.props must set NuGetAuditLevel to low.");
+        Require(PropertyIsTrueInCi(buildProperties, "RestoreLockedMode"), "Directory.Build.props must enable RestoreLockedMode in CI.");
+        Require(PropertyIsTrueInCi(buildProperties, "ContinuousIntegrationBuild"), "Directory.Build.props must enable ContinuousIntegrationBuild in CI.");
+    }
+
+    private static bool PropertyEquals(XDocument document, string propertyName, string expected)
+    {
+        return string.Equals((string?)document.Descendants(propertyName).FirstOrDefault(), expected, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool PropertyIsTrueInCi(XDocument document, string propertyName)
+    {
+        return document.Descendants(propertyName).Any(element =>
+            string.Equals((string)element, "true", StringComparison.OrdinalIgnoreCase)
+            && (element.Attribute("Condition") is null
+                || string.Equals(((string?)element.Attribute("Condition"))?.Replace(" ", string.Empty, StringComparison.Ordinal), "'$(CI)'=='true'", StringComparison.Ordinal)));
     }
 
     internal static void CheckWorkflowPolicies(string root)

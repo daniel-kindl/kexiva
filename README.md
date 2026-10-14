@@ -4,13 +4,29 @@ High-performance .NET library providing optimized alternatives to selected stand
 
 **Core philosophy: Same API. Same behavior. Better performance.**
 
-Status: M0 — Engineering Foundation (hardening in progress).
+Status: M0 — Engineering Foundation. No public APIs ship yet.
 
-## Building & Testing
+## Build and test
+
+Requires the .NET SDK version in [`global.json`](global.json).
 
 ```bash
-./eng/verify.sh
+./eng/verify.sh          # Linux and macOS
+pwsh ./eng/verify.ps1    # Windows
 ```
+
+CI runs the same scripts on Linux x64, Windows x64, macOS ARM64, and macOS x64.
+
+## Documentation
+
+- [AGENTS.md](AGENTS.md): workflow for agents and humans
+- [CONTRIBUTING.md](CONTRIBUTING.md)
+- [SECURITY.md](SECURITY.md)
+- [Architecture](docs/architecture/README.md)
+- [Decisions (ADRs)](docs/decisions/README.md)
+- [Testing](docs/testing/README.md)
+- [Benchmarks](docs/benchmarks/README.md)
+- [Repository settings](docs/development/repository-settings.md)
 
 ## License
 
