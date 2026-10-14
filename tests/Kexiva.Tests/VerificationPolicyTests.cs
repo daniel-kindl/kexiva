@@ -83,6 +83,92 @@ public sealed class VerificationPolicyTests
         Assert.Contains("do not map to production source files", exception.Message, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Verifies that the CI policy accepts a workflow with all four runners.
+    /// </summary>
+    [Fact]
+    public void CiWorkflow_AcceptsAllFourRunners()
+    {
+        using TemporaryDirectory repository = new();
+        WriteCiWorkflow(repository.Path, _allRunners);
+
+        Verify.Program.CheckCiWorkflow(repository.Path);
+    }
+
+    /// <summary>
+    /// Verifies that the CI policy rejects a workflow that misses any one of the four runners.
+    /// </summary>
+    /// <param name="missingRunner">The runner line that is removed.</param>
+    [Theory]
+    [InlineData("os: ubuntu-24.04")]
+    [InlineData("os: windows-2025")]
+    [InlineData("os: macos-15")]
+    [InlineData("os: macos-15-intel")]
+    public void CiWorkflow_RejectsMissingRunner(string missingRunner)
+    {
+        using TemporaryDirectory repository = new();
+        WriteCiWorkflow(repository.Path, [.. Array.FindAll(_allRunners, runner => runner != missingRunner)]);
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => Verify.Program.CheckCiWorkflow(repository.Path));
+
+        Assert.Contains($"missing '{missingRunner}'", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Verifies that the build policy accepts the repository Directory.Build.props.
+    /// </summary>
+    [Fact]
+    public void BuildProperties_AcceptsRepositoryConfiguration()
+    {
+        using TemporaryDirectory repository = new();
+        WriteBuildProperties(repository.Path, _requiredProperties);
+
+        Verify.Program.CheckBuildProperties(repository.Path);
+    }
+
+    /// <summary>
+    /// Verifies that the build policy rejects a missing or disabled NuGet audit.
+    /// </summary>
+    /// <param name="nuGetAudit">The NuGetAudit element, or an empty string for none.</param>
+    [Theory]
+    [InlineData("")]
+    [InlineData("<NuGetAudit>false</NuGetAudit>")]
+    public void BuildProperties_RejectsMissingOrDisabledNuGetAudit(string nuGetAudit)
+    {
+        using TemporaryDirectory repository = new();
+        WriteBuildProperties(repository.Path, _requiredProperties.Replace("<NuGetAudit>true</NuGetAudit>", nuGetAudit, StringComparison.Ordinal));
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => Verify.Program.CheckBuildProperties(repository.Path));
+
+        Assert.Contains("NuGet audit", exception.Message, StringComparison.Ordinal);
+    }
+
+    private static readonly string[] _allRunners = ["os: ubuntu-24.04", "os: windows-2025", "os: macos-15", "os: macos-15-intel"];
+
+    private const string _requiredProperties =
+        "<TreatWarningsAsErrors>true</TreatWarningsAsErrors>"
+        + "<EnableNETAnalyzers>true</EnableNETAnalyzers>"
+        + "<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>"
+        + "<NuGetAudit>true</NuGetAudit>";
+
+    private static void WriteCiWorkflow(string root, string[] runners)
+    {
+        string workflows = Path.Combine(root, ".github", "workflows");
+        Directory.CreateDirectory(workflows);
+        string matrix = string.Concat(Array.ConvertAll(runners, runner => $"          - {runner}\n"));
+        File.WriteAllText(
+            Path.Combine(workflows, "ci.yml"),
+            "jobs:\n  verify:\n    strategy:\n      matrix:\n        include:\n" + matrix.Replace("- os:", "  os:", StringComparison.Ordinal)
+            + "    steps:\n      - name: Verify (bash)\n        run: ./eng/verify.sh\n      - name: Verify (PowerShell)\n        run: ./eng/verify.ps1\n");
+    }
+
+    private static void WriteBuildProperties(string root, string properties)
+    {
+        File.WriteAllText(Path.Combine(root, "Directory.Build.props"), $"<Project><PropertyGroup>{properties}</PropertyGroup></Project>");
+    }
+
     private static void WriteCoverageReport(string resultsDirectory, string sourcePath, string line)
     {
         string report = $"<coverage><packages><package name=\"Kexiva\"><classes><class filename=\"{sourcePath}\"><lines>{line}</lines></class></classes></package></packages></coverage>";
