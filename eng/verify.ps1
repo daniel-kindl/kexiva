@@ -1,3 +1,5 @@
+# Full local and CI verification. Keep in sync with eng/verify.sh.
+# Kexiva.Verify checks that both scripts run the same dotnet command sequence.
 $ErrorActionPreference = "Stop"
 
 $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
@@ -15,7 +17,17 @@ function Invoke-DotNet([scriptblock] $Command) {
 
 Write-Host "=== Kexiva Verification ==="
 
-Write-Host "Restoring locked dependencies..."
+Write-Host "Checking prerequisites..."
+if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw "git is not on PATH (Nerdbank.GitVersioning needs git history)." }
+if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) { throw "dotnet is not on PATH. Install the SDK version in global.json." }
+$activeSdk = & dotnet --version
+if ($LASTEXITCODE -ne 0) { throw "No installed SDK satisfies global.json." }
+Write-Host "Active SDK: $activeSdk (global.json pins the SDK; rollForward latestPatch)"
+if ((& git rev-parse --is-shallow-repository) -ne "false") { throw "Shallow clone. Nerdbank.GitVersioning needs full history (fetch-depth: 0)." }
+$env:DOTNET_CLI_TELEMETRY_OPTOUT = "1"
+$env:DOTNET_NOLOGO = "1"
+
+Write-Host "Restoring locked dependencies (NuGet audit fails restore on any advisory)..."
 Invoke-DotNet { dotnet restore --locked-mode }
 
 Write-Host "Building Release with warnings as errors..."

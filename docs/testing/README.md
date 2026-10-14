@@ -1,0 +1,29 @@
+# Testing
+
+The testing rules are in [docs/standards/testing.md](../standards/testing.md). The decision record is [ADR 0003](../decisions/0003-testing-strategy.md).
+
+## Run the tests
+
+```bash
+./eng/verify.sh          # Linux and macOS
+pwsh ./eng/verify.ps1    # Windows
+```
+
+The scripts run locked restore (with NuGet audit), Release build with warnings as errors, format checks, unit and architecture tests with coverage, compatibility tests, and the `Kexiva.Verify` policy and coverage checks. Results go to `TestResults/verification-*`.
+
+For a quick loop:
+
+```bash
+dotnet test tests/Kexiva.Tests/Kexiva.Tests.csproj
+```
+
+## Test projects
+
+| Project | Contains |
+| --- | --- |
+| `tests/Kexiva.Tests` | Unit, architecture (`ArchitectureTests`), verification policy tests |
+| `tests/Kexiva.Compatibility.Tests` | Public API and behavior compatibility |
+
+## Platforms
+
+CI runs the verify scripts on Linux x64, Windows x64, macOS ARM64, and macOS x64. Mark any platform that you did not run as NOT RUN in the pull request.

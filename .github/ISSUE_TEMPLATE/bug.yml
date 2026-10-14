@@ -1,0 +1,39 @@
+name: Bug
+description: A Kexiva API behaves differently from the .NET API it replaces, or fails.
+title: "fix: "
+labels: ["type:bug", "status:ready"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal input and the call that you made.
+      value: "1. \n2. \n3. "
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result (.NET behavior)
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      multiple: true
+      options: [Windows x64, Linux x64, macOS ARM64, macOS x64]
+    validations:
+      required: true

@@ -1,0 +1,28 @@
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+    target-branch: dev
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      testing:
+        patterns: ["xunit*", "coverlet*", "Microsoft.NET.Test.Sdk"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    target-branch: dev
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(ci)"
+  - package-ecosystem: dotnet-sdk
+    directory: /
+    schedule:
+      interval: weekly
+    target-branch: dev
+    commit-message:
+      prefix: "chore(sdk)"

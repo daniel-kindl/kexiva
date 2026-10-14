@@ -1,0 +1,25 @@
+name: Performance
+description: A performance improvement backed by benchmarks.
+title: "perf: "
+labels: ["type:performance", "status:ready"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and benchmarks
+      description: BenchmarkDotNet results with environment. Do not invent numbers.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      value: "- [ ] "
+    validations:
+      required: true

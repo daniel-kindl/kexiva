@@ -13,7 +13,8 @@ Windows:
 ```
 
 Validates:
-1. Locked dependency restore
+0. Prerequisites (git, SDK from global.json, full git history)
+1. Locked dependency restore with NuGet audit (advisories fail the restore)
 2. Release build
 3. Zero warnings and errors
 4. Static analysis
@@ -29,6 +30,6 @@ Coverage applies only to production source files in the Kexiva assembly. It requ
 
 The Public API Analyzer checks the shipped and unshipped API baselines during the Release build. Add approved API changes to PublicAPI.Unshipped.txt.
 
-The scripts require the .NET 10 SDK and restore dependencies from committed NuGet lock files. The Windows script also requires PowerShell 7.
+The scripts require the .NET SDK pinned in global.json and restore dependencies from committed NuGet lock files. The Windows script also requires PowerShell 7.
 
 Full fuzzing, mutation, and performance regression suites run separately.

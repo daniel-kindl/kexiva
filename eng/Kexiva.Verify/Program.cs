@@ -78,7 +78,11 @@ internal static class Program
 
         string workflow = File.ReadAllText(Path.Combine(root, ".github", "workflows", "ci.yml"));
         string[] workflowLines = workflow.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        Require(workflowLines.Contains("os: [ubuntu-latest, windows-latest]", StringComparer.Ordinal), "CI must run on Linux and Windows.");
+        string[] requiredRunners = ["os: ubuntu-24.04", "os: windows-2025", "os: macos-15", "os: macos-15-intel"];
+        foreach (string runner in requiredRunners)
+        {
+            Require(workflowLines.Contains(runner, StringComparer.Ordinal), $"CI must run on Linux, Windows, macOS ARM64, and macOS x64 (missing '{runner}').");
+        }
         Require(workflowLines.Contains("run: ./eng/verify.sh", StringComparer.Ordinal), "CI must invoke eng/verify.sh.");
         Require(workflowLines.Contains("run: ./eng/verify.ps1", StringComparer.Ordinal), "CI must invoke eng/verify.ps1.");
 
@@ -88,6 +92,7 @@ internal static class Program
         Require(PropertyIsTrue(buildProperties, "TreatWarningsAsErrors"), "Directory.Build.props must treat warnings as errors.");
         Require(PropertyIsTrue(buildProperties, "EnableNETAnalyzers"), "Directory.Build.props must enable .NET analyzers.");
         Require(PropertyIsTrue(buildProperties, "RestorePackagesWithLockFile"), "Directory.Build.props must enable NuGet lock files.");
+        Require(PropertyIsTrue(buildProperties, "NuGetAudit"), "Directory.Build.props must enable NuGet audit.");
 
         XDocument packageProperties = XDocument.Load(Path.Combine(root, "Directory.Packages.props"));
         XElement[] packageVersions = [.. packageProperties.Descendants("PackageVersion")];
