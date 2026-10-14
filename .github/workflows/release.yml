@@ -25,6 +25,16 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Check release ref
+        shell: bash
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          case "$REF" in
+            refs/heads/main|refs/tags/v*) echo "Release ref: $REF" ;;
+            *) echo "::error::Release runs only from main or a v* tag (got $REF)." >&2; false ;;
+          esac
+
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -36,10 +46,12 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Build and pack
+      - name: Verify
+        shell: bash
+        run: ./eng/verify.sh
+
+      - name: Pack
         run: |
-          dotnet restore --locked-mode
-          dotnet build -c Release --no-restore --warnaserror
           dotnet pack src/Kexiva/Kexiva.csproj -c Release --no-build --no-restore -o ./artifacts
 
       - name: Create GitHub Release
