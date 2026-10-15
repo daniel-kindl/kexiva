@@ -27,6 +27,10 @@ Kexiva.Tests ──> Kexiva.Verify
 - The production project has no project references.
 - The production project uses only private build infrastructure packages.
 
+## Compatibility
+
+Behavioral compatibility for M1 integer parsing and formatting is specified in [Integer parsing and formatting](../compatibility/integer-parsing-and-formatting.md).
+
 ## Public API
 
 The Public API Analyzer fails the build on an unrecorded public API change. Add new API to `src/Kexiva/PublicAPI.Unshipped.txt`. Move it to `PublicAPI.Shipped.txt` at release.
