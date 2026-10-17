@@ -20,7 +20,7 @@ Kexiva promises the same API and the same behavior as .NET. The build must be de
   - `ci.yml` uses the runners `ubuntu-24.04`, `windows-2025`, `macos-15`, and `macos-15-intel` and calls both scripts;
   - every workflow `dotnet restore` uses `--locked-mode` and every `dotnet build` uses `--warnaserror`;
   - `Directory.Build.props` sets `TreatWarningsAsErrors`, `MSBuildTreatWarningsAsErrors`, `EnableNETAnalyzers`, `EnforceCodeStyleInBuild`, `AnalysisMode=All`, `RestorePackagesWithLockFile`, `NuGetAudit`, `NuGetAuditMode=all`, `NuGetAuditLevel=low`, and, in CI, `RestoreLockedMode` and `ContinuousIntegrationBuild`;
-  - package versions are central and fixed, and every project has a committed lock file;
+  - package versions are central and fixed, and every source project has a committed lock file. `Kexiva.Verify` ignores a project under `bin`, `obj`, `BenchmarkDotNet.Artifacts`, or `BenchmarkDotNet.Bin` at any depth. The directory name match ignores case;
   - production line and branch coverage thresholds.
 - The SDK pin and the `.editorconfig`/`.globalconfig` rules are enforced by the SDK and the build, not by `Kexiva.Verify`.
 
