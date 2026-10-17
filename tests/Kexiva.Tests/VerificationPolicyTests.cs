@@ -64,6 +64,28 @@ public sealed class VerificationPolicyTests
     }
 
     /// <summary>
+    /// Verifies that a source file under build output is not a production source.
+    /// </summary>
+    /// <param name="directoryName">The build-output directory name.</param>
+    [Theory]
+    [InlineData("bin")]
+    [InlineData("obj")]
+    [InlineData("Bin")]
+    public void Coverage_IgnoresSourceFileUnderBuildOutput(string directoryName)
+    {
+        ArgumentNullException.ThrowIfNull(directoryName);
+        using TemporaryDirectory repository = new();
+        string sourceDirectory = Path.Combine(repository.Path, "src", "Kexiva", directoryName);
+        string resultsDirectory = Path.Combine(repository.Path, "results");
+        Directory.CreateDirectory(sourceDirectory);
+        Directory.CreateDirectory(resultsDirectory);
+        File.WriteAllText(Path.Combine(sourceDirectory, "Widget.cs"), "namespace Kexiva; public sealed class Widget { public int Value => 1; }");
+        WriteCoverageReport(resultsDirectory, "Kexiva/Widget.cs", "<line number=\"1\" hits=\"0\" />");
+
+        Verify.Program.CheckCoverage(repository.Path, resultsDirectory);
+    }
+
+    /// <summary>
     /// Verifies that coverage rejects production sources when report paths do not match inventory.
     /// </summary>
     [Fact]
@@ -146,6 +168,52 @@ public sealed class VerificationPolicyTests
     }
 
     /// <summary>
+    /// Verifies that repository policy ignores a generated project under build output.
+    /// </summary>
+    /// <param name="directoryName">The build-output directory name.</param>
+    [Theory]
+    [InlineData("bin")]
+    [InlineData("obj")]
+    [InlineData("Bin")]
+    [InlineData("OBJ")]
+    [InlineData("BenchmarkDotNet.Artifacts")]
+    [InlineData("BenchmarkDotNet.Bin")]
+    public void RepositoryPolicy_IgnoresProjectUnderBuildOutput(string directoryName)
+    {
+        ArgumentNullException.ThrowIfNull(directoryName);
+        using TemporaryDirectory repository = new();
+        WriteRepositoryPolicyFixture(repository.Path);
+        WriteSourceProject(repository.Path, Path.Combine("src", "Widget"));
+        WriteGeneratedProject(repository.Path, Path.Combine("nested", "deeper", directoryName, "more", "generated"));
+
+        Verify.Program.CheckRepositoryPolicies(repository.Path);
+    }
+
+    /// <summary>
+    /// Verifies that a source project outside build output still needs a lock file.
+    /// </summary>
+    /// <param name="relativeProjectPath">The project path, relative to the repository root.</param>
+    [Theory]
+    [InlineData("tools/binary/Tool.csproj")]
+    [InlineData("src/bin.csproj")]
+    public void RepositoryPolicy_RejectsSourceProjectWithoutLockFile(string relativeProjectPath)
+    {
+        ArgumentNullException.ThrowIfNull(relativeProjectPath);
+        using TemporaryDirectory repository = new();
+        WriteRepositoryPolicyFixture(repository.Path);
+        WriteSourceProject(repository.Path, Path.Combine("src", "Widget"));
+        string projectPath = Path.Combine(repository.Path, relativeProjectPath.Replace('/', Path.DirectorySeparatorChar));
+        Directory.CreateDirectory(Path.GetDirectoryName(projectPath)!);
+        File.WriteAllText(projectPath, "<Project Sdk=\"Microsoft.NET.Sdk\"><ItemGroup><PackageReference Include=\"X\" Version=\"1.0.0\" /></ItemGroup></Project>");
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => Verify.Program.CheckRepositoryPolicies(repository.Path));
+
+        Assert.Contains("packages.lock.json", exception.Message, StringComparison.Ordinal);
+        Assert.Contains(relativeProjectPath.Replace('/', Path.DirectorySeparatorChar), exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// Verifies that the build policy rejects each missing or weakened ADR 0002 build property.
     /// </summary>
     /// <param name="required">The required element that is replaced.</param>
@@ -200,6 +268,59 @@ public sealed class VerificationPolicyTests
     private static void WriteBuildProperties(string root, string properties)
     {
         File.WriteAllText(Path.Combine(root, "Directory.Build.props"), $"<Project><PropertyGroup>{properties}</PropertyGroup></Project>");
+    }
+
+    private static void WriteRepositoryPolicyFixture(string root)
+    {
+        WriteCiWorkflow(root, _allRunners);
+        WriteBuildProperties(root, _requiredProperties);
+        Directory.CreateDirectory(Path.Combine(root, "eng"));
+        File.WriteAllText(
+            Path.Combine(root, "eng", "verify.sh"),
+            """
+            dotnet restore --locked-mode
+            dotnet build -c Release --no-restore --warnaserror
+            dotnet format --verify-no-changes --severity info --no-restore
+            dotnet test tests/Kexiva.Tests/Kexiva.Tests.csproj -c Release --no-build --settings eng/coverage.runsettings --collect:"XPlat Code Coverage" --results-directory "$results_directory"
+            dotnet test tests/Kexiva.Compatibility.Tests/Kexiva.Compatibility.Tests.csproj -c Release --no-build
+            dotnet run --project eng/Kexiva.Verify/Kexiva.Verify.csproj -c Release --no-build -- "$results_directory"
+            """);
+        File.WriteAllText(
+            Path.Combine(root, "eng", "verify.ps1"),
+            """
+            Invoke-DotNet { dotnet restore --locked-mode }
+            Invoke-DotNet { dotnet build -c Release --no-restore --warnaserror }
+            Invoke-DotNet { dotnet format --verify-no-changes --severity info --no-restore }
+            Invoke-DotNet { dotnet test tests/Kexiva.Tests/Kexiva.Tests.csproj -c Release --no-build --settings eng/coverage.runsettings --collect:"XPlat Code Coverage" --results-directory "$resultsDirectory" }
+            Invoke-DotNet { dotnet test tests/Kexiva.Compatibility.Tests/Kexiva.Compatibility.Tests.csproj -c Release --no-build }
+            Invoke-DotNet { dotnet run --project eng/Kexiva.Verify/Kexiva.Verify.csproj -c Release --no-build -- "$resultsDirectory" }
+            """);
+        File.WriteAllText(
+            Path.Combine(root, "Directory.Packages.props"),
+            """
+            <Project>
+              <ItemGroup>
+                <PackageVersion Include="xunit" Version="2.9.3" />
+              </ItemGroup>
+            </Project>
+            """);
+    }
+
+    private static void WriteSourceProject(string root, string relativeDirectory)
+    {
+        string directory = Path.Combine(root, relativeDirectory);
+        Directory.CreateDirectory(directory);
+        File.WriteAllText(Path.Combine(directory, "Widget.csproj"), "<Project Sdk=\"Microsoft.NET.Sdk\"></Project>");
+        File.WriteAllText(Path.Combine(directory, "packages.lock.json"), "{}");
+    }
+
+    private static void WriteGeneratedProject(string root, string relativeDirectory)
+    {
+        string directory = Path.Combine(root, relativeDirectory);
+        Directory.CreateDirectory(directory);
+        File.WriteAllText(
+            Path.Combine(directory, "BenchmarkDotNet.Autogenerated.csproj"),
+            "<Project Sdk=\"Microsoft.NET.Sdk\"><ItemGroup><PackageReference Include=\"BenchmarkDotNet\" Version=\"0.15.8\" /></ItemGroup></Project>");
     }
 
     private static void WriteCoverageReport(string resultsDirectory, string sourcePath, string line)
