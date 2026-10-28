@@ -1,6 +1,6 @@
 # Testing
 
-The testing rules are in [docs/standards/testing.md](../standards/testing.md). The decision record is [ADR 0003](../decisions/0003-testing-strategy.md).
+The testing rules are in [docs/standards/testing.md](../standards/testing.md). The decision record is [ADR 0006](../decisions/0006-testing-xunit-v3-on-microsoft-testing-platform.md).
 
 ## Run the tests
 

@@ -70,7 +70,7 @@ internal static class Program
             "dotnet restore --locked-mode",
             "dotnet build -c Release --no-restore --warnaserror",
             "dotnet format --verify-no-changes --severity info --no-restore",
-            "dotnet test tests/Kexiva.Tests/Kexiva.Tests.csproj -c Release --no-build --settings eng/coverage.runsettings --collect:\"XPlat Code Coverage\" --results-directory <results>",
+            "dotnet test tests/Kexiva.Tests/Kexiva.Tests.csproj -c Release --no-build --results-directory <results> --coverlet --coverlet-output-format cobertura --coverlet-include \"[Kexiva]*\"",
             "dotnet test tests/Kexiva.Compatibility.Tests/Kexiva.Compatibility.Tests.csproj -c Release --no-build",
             "dotnet run --project eng/Kexiva.Verify/Kexiva.Verify.csproj -c Release --no-build -- <results>"
         ];
@@ -261,7 +261,7 @@ internal static class Program
             .Where(path => !string.Equals(Path.GetFileName(path), "AssemblyInfo.cs", StringComparison.OrdinalIgnoreCase))
             .Select(path => Path.GetRelativePath(productionDirectory, path).Replace('\\', '/'))];
         string[] reports = Directory.Exists(resultsDirectory)
-            ? Directory.GetFiles(resultsDirectory, "coverage.cobertura.xml", SearchOption.AllDirectories)
+            ? Directory.GetFiles(resultsDirectory, "coverage.cobertura*.xml", SearchOption.AllDirectories)
             : [];
         Require(reports.Length > 0, $"No Cobertura coverage report exists under '{resultsDirectory}'.");
 
