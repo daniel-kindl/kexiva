@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -10,6 +11,15 @@ internal static class Program
 {
     private const double _minimumLineCoverage = 0.80;
     private const double _minimumBranchCoverage = 0.70;
+
+    // Generated projects live under these directory names. They are not source projects.
+    private static readonly HashSet<string> _buildOutputDirectoryNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "bin",
+        "obj",
+        "BenchmarkDotNet.Artifacts",
+        "BenchmarkDotNet.Bin",
+    };
 
     private static int Main(string[] args)
     {
@@ -51,7 +61,7 @@ internal static class Program
         }
     }
 
-    private static void CheckRepositoryPolicies(string root)
+    internal static void CheckRepositoryPolicies(string root)
     {
         string shellScript = File.ReadAllText(Path.Combine(root, "eng", "verify.sh"));
         string windowsScript = File.ReadAllText(Path.Combine(root, "eng", "verify.ps1"));
@@ -89,7 +99,7 @@ internal static class Program
             Require(!string.IsNullOrWhiteSpace(version) && !version.Contains('*', StringComparison.Ordinal), "Package versions must be explicit and fixed.");
         }
 
-        foreach (string projectPath in Directory.EnumerateFiles(root, "*.csproj", SearchOption.AllDirectories))
+        foreach (string projectPath in EnumerateRepositoryProjects(root))
         {
             XDocument project = XDocument.Load(projectPath);
             string lockFile = Path.Combine(Path.GetDirectoryName(projectPath)!, "packages.lock.json");
@@ -247,7 +257,7 @@ internal static class Program
     {
         string productionDirectory = Path.Combine(repositoryRoot, "src", "Kexiva");
         string[] productionFiles = [.. Directory.EnumerateFiles(productionDirectory, "*.cs", SearchOption.AllDirectories)
-            .Where(path => !path.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).Contains("obj", StringComparer.Ordinal))
+            .Where(path => !IsUnderBuildOutput(productionDirectory, path))
             .Where(path => !string.Equals(Path.GetFileName(path), "AssemblyInfo.cs", StringComparison.OrdinalIgnoreCase))
             .Select(path => Path.GetRelativePath(productionDirectory, path).Replace('\\', '/'))];
         string[] reports = Directory.Exists(resultsDirectory)
@@ -329,6 +339,50 @@ internal static class Program
         Console.WriteLine($"Production coverage: {lineCoverage:P1} lines ({coveredLines}/{totalLines}), {branchSummary}.");
         Require(lineCoverage >= _minimumLineCoverage, $"Line coverage is below {_minimumLineCoverage:P0}.");
         Require(totalBranches == 0 || branchCoverage >= _minimumBranchCoverage, $"Branch coverage is below {_minimumBranchCoverage:P0}.");
+    }
+
+    private static List<string> EnumerateRepositoryProjects(string root)
+    {
+        List<string> projects = [];
+        CollectRepositoryProjects(new DirectoryInfo(root), projects);
+        return projects;
+    }
+
+    private static void CollectRepositoryProjects(DirectoryInfo directory, List<string> projects)
+    {
+        foreach (FileInfo file in directory.EnumerateFiles("*.csproj"))
+        {
+            projects.Add(file.FullName);
+        }
+
+        foreach (DirectoryInfo child in directory.EnumerateDirectories())
+        {
+            if (IsBuildOutputDirectory(child.Name))
+            {
+                continue;
+            }
+
+            CollectRepositoryProjects(child, projects);
+        }
+    }
+
+    private static bool IsUnderBuildOutput(string root, string path)
+    {
+        string relative = Path.GetRelativePath(root, path);
+        foreach (string segment in relative.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
+        {
+            if (IsBuildOutputDirectory(segment))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsBuildOutputDirectory(string name)
+    {
+        return _buildOutputDirectoryNames.Contains(name);
     }
 
     private static bool PropertyIsTrue(XDocument document, string propertyName)
