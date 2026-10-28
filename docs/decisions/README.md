@@ -11,3 +11,4 @@ Each significant decision has a numbered record. Copy [0000-template.md](0000-te
 | [0005](0005-branching-and-repository-rules.md) | Branching, squash merges, and rulesets | Accepted |
 | [0006](0006-testing-xunit-v3-on-microsoft-testing-platform.md) | Testing: xUnit v3 on Microsoft.Testing.Platform | Accepted |
 | [0007](0007-property-fuzz-and-mutation-tooling.md) | Property, fuzz, and mutation tooling | Accepted |
+| [0008](0008-uint32-tryparse-api.md) | UInt32 TryParse API | Accepted |

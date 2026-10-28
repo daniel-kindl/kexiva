@@ -4,7 +4,7 @@ High-performance .NET library providing optimized alternatives to selected stand
 
 **Core philosophy: Same API. Same behavior. Better performance.**
 
-Status: M0 — Engineering Foundation. No public APIs ship yet.
+Status: M1, Integer Parsing and Formatting. UInt32 parsing is the first public API.
 
 ## Build and test
 

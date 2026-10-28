@@ -9,7 +9,7 @@ The testing rules are in [docs/standards/testing.md](../standards/testing.md). T
 pwsh ./eng/verify.ps1    # Windows
 ```
 
-The scripts run locked restore (with NuGet audit), Release build with warnings as errors, format checks, unit and architecture tests with coverage, compatibility tests, and the `Kexiva.Verify` policy and coverage checks. Results go to `TestResults/verification-*`.
+The scripts run locked restore (with NuGet audit), Release build with warnings as errors, format checks, unit tests, architecture tests, and compatibility tests. Both test projects write Cobertura coverage. `Kexiva.Verify` merges a repeated source line across those reports and then applies the coverage policy. Results go to `TestResults/verification-*`.
 
 For a quick loop:
 

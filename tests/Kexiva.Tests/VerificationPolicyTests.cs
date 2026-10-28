@@ -81,6 +81,44 @@ public sealed class VerificationPolicyTests
     }
 
     /// <summary>
+    /// Verifies that two reports contribute one count for the same source line.
+    /// </summary>
+    [Fact]
+    public void Coverage_MergesTheSameLineAcrossReports()
+    {
+        using TemporaryDirectory repository = new();
+        string sourceDirectory = Path.Combine(repository.Path, "src", "Kexiva");
+        string resultsDirectory = Path.Combine(repository.Path, "results");
+        Directory.CreateDirectory(sourceDirectory);
+        Directory.CreateDirectory(resultsDirectory);
+        File.WriteAllText(Path.Combine(sourceDirectory, "Widget.cs"), "namespace Kexiva; public sealed class Widget { public int Value => 1; }");
+        WriteNamedCoverageReport(resultsDirectory, "coverage.cobertura.unit.xml", "Kexiva/Widget.cs", "<line number=\"1\" hits=\"1\" condition-coverage=\"0% (0/10)\" />");
+        WriteNamedCoverageReport(resultsDirectory, "coverage.cobertura.compatibility.xml", "Kexiva/Widget.cs", "<line number=\"1\" hits=\"1\" condition-coverage=\"80% (8/10)\" />");
+
+        Verify.Program.CheckCoverage(repository.Path, resultsDirectory);
+    }
+
+    /// <summary>
+    /// Verifies that one report still counts each repeated line.
+    /// </summary>
+    [Fact]
+    public void Coverage_CountsEachRepeatedLineInOneReport()
+    {
+        using TemporaryDirectory repository = new();
+        string sourceDirectory = Path.Combine(repository.Path, "src", "Kexiva");
+        string resultsDirectory = Path.Combine(repository.Path, "results");
+        Directory.CreateDirectory(sourceDirectory);
+        Directory.CreateDirectory(resultsDirectory);
+        File.WriteAllText(Path.Combine(sourceDirectory, "Widget.cs"), "namespace Kexiva; public sealed class Widget { public int Value => 1; }");
+        WriteCoverageReport(resultsDirectory, "Kexiva/Widget.cs", "<line number=\"1\" hits=\"1\" /><line number=\"1\" hits=\"0\" />");
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => Verify.Program.CheckCoverage(repository.Path, resultsDirectory));
+
+        Assert.Contains("Line coverage is below", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// Verifies that coverage reads a Cobertura report whose name includes a coverlet.MTP timestamp.
     /// </summary>
     [Fact]
@@ -317,7 +355,7 @@ public sealed class VerificationPolicyTests
             dotnet build -c Release --no-restore --warnaserror
             dotnet format --verify-no-changes --severity info --no-restore
             dotnet test tests/Kexiva.Tests/Kexiva.Tests.csproj -c Release --no-build --results-directory "$results_directory" --coverlet --coverlet-output-format cobertura --coverlet-include "[Kexiva]*"
-            dotnet test tests/Kexiva.Compatibility.Tests/Kexiva.Compatibility.Tests.csproj -c Release --no-build
+            dotnet test tests/Kexiva.Compatibility.Tests/Kexiva.Compatibility.Tests.csproj -c Release --no-build --results-directory "$results_directory" --coverlet --coverlet-output-format cobertura --coverlet-include "[Kexiva]*"
             dotnet run --project eng/Kexiva.Verify/Kexiva.Verify.csproj -c Release --no-build -- "$results_directory"
             """);
         File.WriteAllText(
@@ -327,7 +365,7 @@ public sealed class VerificationPolicyTests
             Invoke-DotNet { dotnet build -c Release --no-restore --warnaserror }
             Invoke-DotNet { dotnet format --verify-no-changes --severity info --no-restore }
             Invoke-DotNet { dotnet test tests/Kexiva.Tests/Kexiva.Tests.csproj -c Release --no-build --results-directory "$resultsDirectory" --coverlet --coverlet-output-format cobertura --coverlet-include "[Kexiva]*" }
-            Invoke-DotNet { dotnet test tests/Kexiva.Compatibility.Tests/Kexiva.Compatibility.Tests.csproj -c Release --no-build }
+            Invoke-DotNet { dotnet test tests/Kexiva.Compatibility.Tests/Kexiva.Compatibility.Tests.csproj -c Release --no-build --results-directory "$resultsDirectory" --coverlet --coverlet-output-format cobertura --coverlet-include "[Kexiva]*" }
             Invoke-DotNet { dotnet run --project eng/Kexiva.Verify/Kexiva.Verify.csproj -c Release --no-build -- "$resultsDirectory" }
             """);
         File.WriteAllText(
@@ -371,8 +409,13 @@ public sealed class VerificationPolicyTests
 
     private static void WriteCoverageReport(string resultsDirectory, string sourcePath, string line)
     {
+        WriteNamedCoverageReport(resultsDirectory, "coverage.cobertura.xml", sourcePath, line);
+    }
+
+    private static void WriteNamedCoverageReport(string resultsDirectory, string fileName, string sourcePath, string line)
+    {
         string report = $"<coverage><packages><package name=\"Kexiva\"><classes><class filename=\"{sourcePath}\"><lines>{line}</lines></class></classes></package></packages></coverage>";
-        File.WriteAllText(Path.Combine(resultsDirectory, "coverage.cobertura.xml"), report);
+        File.WriteAllText(Path.Combine(resultsDirectory, fileName), report);
     }
 
     private sealed class TemporaryDirectory : IDisposable
