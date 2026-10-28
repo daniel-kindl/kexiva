@@ -24,6 +24,8 @@ dotnet test tests/Kexiva.Tests/Kexiva.Tests.csproj
 | `tests/Kexiva.Tests` | Unit, architecture (`ArchitectureTests`), verification policy tests |
 | `tests/Kexiva.Compatibility.Tests` | Public API and behavior compatibility |
 
+Integer parsing and formatting differential tests follow [Integer parsing and formatting](../compatibility/integer-parsing-and-formatting.md). Compare each Kexiva method with the reference method on the same arguments.
+
 ## Platforms
 
 CI runs the verify scripts on Linux x64, Windows x64, macOS ARM64, and macOS x64. Mark any platform that you did not run as NOT RUN in the pull request.

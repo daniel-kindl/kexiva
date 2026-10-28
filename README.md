@@ -24,6 +24,7 @@ CI runs the same scripts on Linux x64, Windows x64, macOS ARM64, and macOS x64.
 - [SECURITY.md](SECURITY.md)
 - [Architecture](docs/architecture/README.md)
 - [Decisions (ADRs)](docs/decisions/README.md)
+- [Integer parsing and formatting](docs/compatibility/integer-parsing-and-formatting.md)
 - [Testing](docs/testing/README.md)
 - [Benchmarks](docs/benchmarks/README.md)
 - [Repository settings](docs/development/repository-settings.md)
