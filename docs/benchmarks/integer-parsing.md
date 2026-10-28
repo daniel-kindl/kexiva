@@ -42,3 +42,13 @@ The command uses the default BenchmarkDotNet job and `MemoryDiagnoser`. It recor
 Do not use this run as a performance claim. Regression decisions need stable benchmarking hardware. See [methodology.md](methodology.md).
 
 The recorded run is [results/2026-10-28-integer-parsing.md](results/2026-10-28-integer-parsing.md).
+
+## Later comparisons
+
+Keep one concrete benchmark class for each integer type. A shared generic benchmark can change discovery and the measured code. Revisit that split only when more numeric types make the duplication costly.
+
+A comparison of Kexiva with .NET needs the same input set on every measured operation. String `TryParse` already uses valid, invalid, boundary, and overflow inputs. UTF-8 parsing and formatting in this baseline use only `123456`.
+
+Check the benchmark inputs in separate tests. Do not put those checks inside a timed benchmark method. The baseline methods ignore the `TryParse` and `TryFormat` success flags so the timed path stays the parse or format call.
+
+The Int64 UTF-8 row in the recorded run has a wide spread. See the results document.
