@@ -1,6 +1,6 @@
 # Testing
 
-The testing rules are in [docs/standards/testing.md](../standards/testing.md). The decision record is [ADR 0006](../decisions/0006-testing-xunit-v3-on-microsoft-testing-platform.md).
+The testing rules are in [docs/standards/testing.md](../standards/testing.md). The runner decision is [ADR 0006](../decisions/0006-testing-xunit-v3-on-microsoft-testing-platform.md). Property, fuzz, and mutation tooling is [ADR 0007](../decisions/0007-property-fuzz-and-mutation-tooling.md).
 
 ## Run the tests
 

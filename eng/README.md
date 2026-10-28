@@ -32,4 +32,4 @@ The Public API Analyzer checks the shipped and unshipped API baselines during th
 
 The scripts require the .NET SDK pinned in global.json and restore dependencies from committed NuGet lock files. The Windows script also requires PowerShell 7.
 
-Full fuzzing, mutation, and performance regression suites run separately.
+Nightly fuzzing is `./eng/fuzz.sh`. Nightly mutation is `./eng/mutate.sh`. They are not part of `eng/verify.sh` or `eng/verify.ps1`. Performance regression suites run separately.

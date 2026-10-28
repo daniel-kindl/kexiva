@@ -7,6 +7,7 @@
   <ItemGroup>
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="coverlet.MTP" />
+    <PackageReference Include="CsCheck" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Kexiva\Kexiva.csproj" />
