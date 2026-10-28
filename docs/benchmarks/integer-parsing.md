@@ -43,6 +43,8 @@ Do not use this run as a performance claim. Regression decisions need stable ben
 
 The recorded run is [results/2026-10-28-integer-parsing.md](results/2026-10-28-integer-parsing.md).
 
+The UInt32 comparison uses this input set for string `TryParse` and UTF-8 `TryParse`. The recorded run is [results/2026-10-28-uint32-parsing.md](results/2026-10-28-uint32-parsing.md).
+
 ## Later comparisons
 
 Keep one concrete benchmark class for each integer type. A shared generic benchmark can change discovery and the measured code. Revisit that split only when more numeric types make the duplication costly.

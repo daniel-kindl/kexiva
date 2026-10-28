@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-The project is in pre-release (M0). Only the latest commit on `main` receives security fixes.
+The project is in pre-release (M1). Only the latest commit on `main` receives security fixes.
 
 ## Report a vulnerability
 
