@@ -4,11 +4,14 @@ Read [AGENTS.md](AGENTS.md) first. It applies to humans and agents.
 
 ## Development workflow
 
-1. Find or open an issue. Every change starts from an issue.
+1. Select a GitHub issue with the label `status:ready`. Confirm its dependencies and acceptance criteria. Assign yourself. Replace `status:ready` with `status:in-progress`.
 2. Create a branch from `dev`.
 3. Write tests first, then the change.
 4. Run `./eng/verify.sh` or `pwsh ./eng/verify.ps1`.
-5. Open a pull request to `dev`.
+5. Get an independent specification review and an independent standards review. Address the findings.
+6. Open a pull request to `dev`.
+
+After the squash merge, close the linked issue. A merge into `dev` does not close it, because `main` is the default branch.
 
 ## Prerequisites
 

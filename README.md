@@ -19,7 +19,7 @@ CI runs the same scripts on Linux x64, Windows x64, macOS ARM64, and macOS x64.
 
 ## Documentation
 
-- [AGENTS.md](AGENTS.md): workflow for agents and humans
+- [AGENTS.md](AGENTS.md): agent entry point. It points to the dkstack guidelines.
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 - [SECURITY.md](SECURITY.md)
 - [Architecture](docs/architecture/README.md)
