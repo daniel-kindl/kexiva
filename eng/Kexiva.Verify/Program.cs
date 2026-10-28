@@ -71,7 +71,7 @@ internal static class Program
             "dotnet build -c Release --no-restore --warnaserror",
             "dotnet format --verify-no-changes --severity info --no-restore",
             "dotnet test tests/Kexiva.Tests/Kexiva.Tests.csproj -c Release --no-build --results-directory <results> --coverlet --coverlet-output-format cobertura --coverlet-include \"[Kexiva]*\"",
-            "dotnet test tests/Kexiva.Compatibility.Tests/Kexiva.Compatibility.Tests.csproj -c Release --no-build",
+            "dotnet test tests/Kexiva.Compatibility.Tests/Kexiva.Compatibility.Tests.csproj -c Release --no-build --results-directory <results> --coverlet --coverlet-output-format cobertura --coverlet-include \"[Kexiva]*\"",
             "dotnet run --project eng/Kexiva.Verify/Kexiva.Verify.csproj -c Release --no-build -- <results>"
         ];
         string[] shellCommands = ReadShellCommands(shellScript);
@@ -270,6 +270,9 @@ internal static class Program
         int totalBranches = 0;
         int coveredBranches = 0;
         System.Collections.Generic.HashSet<string> matchedProductionFiles = new(StringComparer.OrdinalIgnoreCase);
+        // Coverlet repeats a source line for each generic instantiation.
+        // Reports from more than one test project must not count that line twice.
+        System.Collections.Generic.Dictionary<CoverageSite, CoverageTally> sites = [];
         foreach (string report in reports)
         {
             XDocument document = XDocument.Load(report);
@@ -295,15 +298,27 @@ internal static class Program
                 }
 
                 matchedProductionFiles.Add(productionFile);
-
+                string className = (string?)sourceClass.Attribute("name") ?? string.Empty;
+                System.Collections.Generic.Dictionary<int, int> occurrences = [];
                 foreach (XElement sourceLine in sourceClass.Descendants("line"))
                 {
-                    totalLines++;
-                    if (int.TryParse((string?)sourceLine.Attribute("hits"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int hits) && hits > 0)
+                    if (!int.TryParse((string?)sourceLine.Attribute("number"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int lineNumber))
                     {
-                        coveredLines++;
+                        continue;
                     }
 
+                    int occurrence = occurrences.GetValueOrDefault(lineNumber);
+                    occurrences[lineNumber] = occurrence + 1;
+                    CoverageSite site = new(productionFile, className, lineNumber, occurrence);
+                    int hits = 0;
+                    if (int.TryParse((string?)sourceLine.Attribute("hits"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsedHits) && parsedHits > 0)
+                    {
+                        hits = parsedHits;
+                    }
+
+                    bool hasBranches = false;
+                    int covered = 0;
+                    int total = 0;
                     string? conditionCoverage = (string?)sourceLine.Attribute("condition-coverage");
                     if (conditionCoverage is not null)
                     {
@@ -311,14 +326,51 @@ internal static class Program
                         int slash = conditionCoverage.IndexOf('/', open + 1);
                         int close = conditionCoverage.IndexOf(')', slash + 1);
                         if (open >= 0 && slash > open && close > slash
-                            && int.TryParse(conditionCoverage.AsSpan(open + 1, slash - open - 1), NumberStyles.Integer, CultureInfo.InvariantCulture, out int covered)
-                            && int.TryParse(conditionCoverage.AsSpan(slash + 1, close - slash - 1), NumberStyles.Integer, CultureInfo.InvariantCulture, out int total))
+                            && int.TryParse(conditionCoverage.AsSpan(open + 1, slash - open - 1), NumberStyles.Integer, CultureInfo.InvariantCulture, out covered)
+                            && int.TryParse(conditionCoverage.AsSpan(slash + 1, close - slash - 1), NumberStyles.Integer, CultureInfo.InvariantCulture, out total))
                         {
-                            coveredBranches += covered;
-                            totalBranches += total;
+                            hasBranches = true;
                         }
                     }
+
+                    if (sites.TryGetValue(site, out CoverageTally existing))
+                    {
+                        existing.Hits = Math.Max(existing.Hits, hits);
+                        if (hasBranches && (!existing.HasBranches || covered > existing.CoveredBranches))
+                        {
+                            existing.HasBranches = true;
+                            existing.CoveredBranches = covered;
+                            existing.TotalBranches = total;
+                        }
+
+                        sites[site] = existing;
+                    }
+                    else
+                    {
+                        sites[site] = new CoverageTally
+                        {
+                            Hits = hits,
+                            HasBranches = hasBranches,
+                            CoveredBranches = covered,
+                            TotalBranches = total,
+                        };
+                    }
                 }
+            }
+        }
+
+        foreach (CoverageTally tally in sites.Values)
+        {
+            totalLines++;
+            if (tally.Hits > 0)
+            {
+                coveredLines++;
+            }
+
+            if (tally.HasBranches)
+            {
+                coveredBranches += tally.CoveredBranches;
+                totalBranches += tally.TotalBranches;
             }
         }
 
@@ -407,5 +459,15 @@ internal static class Program
         {
             throw new InvalidOperationException(message);
         }
+    }
+
+    private readonly record struct CoverageSite(string File, string ClassName, int Line, int Occurrence);
+
+    private struct CoverageTally
+    {
+        public int Hits;
+        public bool HasBranches;
+        public int CoveredBranches;
+        public int TotalBranches;
     }
 }

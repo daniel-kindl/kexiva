@@ -41,8 +41,8 @@ Invoke-DotNet { dotnet format --verify-no-changes --severity info --no-restore }
 Write-Host "Running unit and architecture tests with coverage..."
 Invoke-DotNet { dotnet test tests/Kexiva.Tests/Kexiva.Tests.csproj -c Release --no-build --results-directory "$resultsDirectory" --coverlet --coverlet-output-format cobertura --coverlet-include "[Kexiva]*" }
 
-Write-Host "Running public API compatibility tests..."
-Invoke-DotNet { dotnet test tests/Kexiva.Compatibility.Tests/Kexiva.Compatibility.Tests.csproj -c Release --no-build }
+Write-Host "Running public API compatibility tests with coverage..."
+Invoke-DotNet { dotnet test tests/Kexiva.Compatibility.Tests/Kexiva.Compatibility.Tests.csproj -c Release --no-build --results-directory "$resultsDirectory" --coverlet --coverlet-output-format cobertura --coverlet-include "[Kexiva]*" }
 
 Write-Host "Checking coverage and repository policies..."
 Invoke-DotNet { dotnet run --project eng/Kexiva.Verify/Kexiva.Verify.csproj -c Release --no-build -- "$resultsDirectory" }

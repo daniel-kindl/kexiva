@@ -12,7 +12,7 @@ namespace Kexiva.Benchmarks;
 /// <remarks>
 /// The provider is <see cref="CultureInfo.InvariantCulture"/> and the style is the default <see cref="NumberStyles.Integer"/>.
 /// The inputs match the UInt32 baseline: <c>1</c>, <c>123456</c>, <c>0</c>, <c>4294967295</c>, <c>12a</c>, and <c>4294967296</c>.
-/// String and UTF-8 parsing both use that set.
+/// <see cref="uint.TryParse(string?, IFormatProvider?, out uint)"/> is the baseline for this class.
 /// </remarks>
 [MemoryDiagnoser]
 [SuppressMessage("Maintainability", "CA1515:Consider making public types internal", Justification = "BenchmarkDotNet requires benchmark classes to be public.")]
@@ -66,13 +66,39 @@ public class UInt32ParsingComparison
         UInt32.TryParse(text, _provider, out uint value);
         return value;
     }
+}
+
+/// <summary>
+/// Compares <see cref="UInt32.TryParse(ReadOnlySpan{byte}, IFormatProvider?, out uint)"/> with <see cref="uint.TryParse(ReadOnlySpan{byte}, IFormatProvider?, out uint)"/>.
+/// </summary>
+/// <remarks>
+/// The provider is <see cref="CultureInfo.InvariantCulture"/> and the style is the default <see cref="NumberStyles.Integer"/>.
+/// The inputs match <see cref="UInt32ParsingComparison"/>.
+/// <see cref="uint.TryParse(ReadOnlySpan{byte}, IFormatProvider?, out uint)"/> is the baseline for this class.
+/// </remarks>
+[MemoryDiagnoser]
+[SuppressMessage("Maintainability", "CA1515:Consider making public types internal", Justification = "BenchmarkDotNet requires benchmark classes to be public.")]
+public class UInt32Utf8ParsingComparison
+{
+    private const string _medium = "123456";
+
+    private CultureInfo _provider = null!;
+
+    /// <summary>
+    /// Stores the invariant provider.
+    /// </summary>
+    [GlobalSetup]
+    public void Setup()
+    {
+        _provider = CultureInfo.InvariantCulture;
+    }
 
     /// <summary>
     /// Parses UTF-8 text with <see cref="uint.TryParse(ReadOnlySpan{byte}, IFormatProvider?, out uint)"/>.
     /// </summary>
     /// <param name="text">The input text. The method selects a compile-time UTF-8 span for that text.</param>
     /// <returns>The parsed value, or 0 when parsing fails.</returns>
-    [Benchmark]
+    [Benchmark(Baseline = true)]
     [Arguments("1")]
     [Arguments(_medium)]
     [Arguments("0")]

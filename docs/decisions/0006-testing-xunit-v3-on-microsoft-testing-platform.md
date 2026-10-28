@@ -14,7 +14,7 @@ ADR 0003 selected xUnit v2, `Microsoft.NET.Test.Sdk`, and `coverlet.collector` (
 - `tests/Kexiva.Tests`: unit, architecture, and verification policy tests.
 - `tests/Kexiva.Compatibility.Tests`: public API and behavior compatibility.
 - Every public operation gets differential tests that compare Kexiva output with the .NET API for the same input, including failure cases.
-- `eng/Kexiva.Verify` requires at least 80% line and 70% branch coverage of production code when coverable code exists. It reads Cobertura reports named `coverage.cobertura*.xml`.
+- `eng/Kexiva.Verify` requires at least 80% line and 70% branch coverage of production code when coverable code exists. It reads Cobertura reports named `coverage.cobertura*.xml`. Unit tests and compatibility tests both write those reports. The gate merges a repeated source line across reports and keeps one count. A repeated line inside one report stays a separate count.
 
 ## Consequences
 

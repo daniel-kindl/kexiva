@@ -1,6 +1,5 @@
 using System;
 using System.Globalization;
-using System.Text;
 
 namespace Kexiva;
 
@@ -918,26 +917,83 @@ internal static class UInt32Parser
         public static bool TryMatch(ReadOnlySpan<byte> text, int index, ReadOnlySpan<char> expected, out int consumed)
         {
             consumed = 0;
-            if (expected.IsEmpty)
+            if (expected.IsEmpty || (uint)index > (uint)text.Length)
             {
                 return false;
             }
 
-            int maxBytes = Encoding.UTF8.GetMaxByteCount(expected.Length);
-            Span<byte> encoded = maxBytes <= 256 ? stackalloc byte[256] : new byte[maxBytes];
-            int written = Encoding.UTF8.GetBytes(expected, encoded);
-            if (written == 0 || index > text.Length || written > text.Length - index)
+            // Encode one scalar into a 4-byte stack buffer. A long sign or separator must not allocate.
+            ReadOnlySpan<byte> rest = text[index..];
+            Span<byte> encoded = stackalloc byte[4];
+            int position = 0;
+            for (int charIndex = 0; charIndex < expected.Length;)
             {
-                return false;
+                int written = EncodeScalar(expected, charIndex, out int charsUsed, encoded);
+                if (position > rest.Length - written)
+                {
+                    return false;
+                }
+
+                if (!rest.Slice(position, written).SequenceEqual(encoded[..written]))
+                {
+                    return false;
+                }
+
+                position += written;
+                charIndex += charsUsed;
             }
 
-            if (!text.Slice(index, written).SequenceEqual(encoded[..written]))
-            {
-                return false;
-            }
-
-            consumed = written;
+            consumed = position;
             return true;
+        }
+
+        private static int EncodeScalar(ReadOnlySpan<char> text, int index, out int charsUsed, Span<byte> destination)
+        {
+            char first = text[index];
+            uint codePoint;
+            if (char.IsHighSurrogate(first)
+                && (uint)(index + 1) < (uint)text.Length
+                && char.IsLowSurrogate(text[index + 1]))
+            {
+                codePoint = (uint)char.ConvertToUtf32(first, text[index + 1]);
+                charsUsed = 2;
+            }
+            else
+            {
+                codePoint = first;
+                charsUsed = 1;
+                if (codePoint is >= 0xD800 and <= 0xDFFF)
+                {
+                    codePoint = 0xFFFD;
+                }
+            }
+
+            if (codePoint <= 0x7F)
+            {
+                destination[0] = (byte)codePoint;
+                return 1;
+            }
+
+            if (codePoint <= 0x7FF)
+            {
+                destination[0] = (byte)(0xC0 | (codePoint >> 6));
+                destination[1] = (byte)(0x80 | (codePoint & 0x3F));
+                return 2;
+            }
+
+            if (codePoint <= 0xFFFF)
+            {
+                destination[0] = (byte)(0xE0 | (codePoint >> 12));
+                destination[1] = (byte)(0x80 | ((codePoint >> 6) & 0x3F));
+                destination[2] = (byte)(0x80 | (codePoint & 0x3F));
+                return 3;
+            }
+
+            destination[0] = (byte)(0xF0 | (codePoint >> 18));
+            destination[1] = (byte)(0x80 | ((codePoint >> 12) & 0x3F));
+            destination[2] = (byte)(0x80 | ((codePoint >> 6) & 0x3F));
+            destination[3] = (byte)(0x80 | (codePoint & 0x3F));
+            return 4;
         }
     }
 

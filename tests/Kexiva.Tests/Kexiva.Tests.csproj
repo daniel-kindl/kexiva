@@ -13,8 +13,4 @@
     <ProjectReference Include="..\..\src\Kexiva\Kexiva.csproj" />
     <ProjectReference Include="..\..\eng\Kexiva.Verify\Kexiva.Verify.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <!-- The coverage gate reads only this project. This link makes the differential tests count. -->
-    <Compile Include="..\Kexiva.Compatibility.Tests\UInt32TryParseDifferentialTests.cs" Link="UInt32TryParseDifferentialTests.cs" />
-  </ItemGroup>
 </Project>
