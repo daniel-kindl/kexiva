@@ -91,6 +91,31 @@ jobs:
       - name: Build benchmarks
         run: dotnet build benchmarks/Kexiva.Benchmarks/Kexiva.Benchmarks.csproj -c Release --no-restore --warnaserror
 
+  benchmark-smoke:
+    name: benchmark-smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup .NET (version from global.json)
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore --locked-mode
+
+      - name: Build benchmarks
+        run: dotnet build benchmarks/Kexiva.Benchmarks/Kexiva.Benchmarks.csproj -c Release --no-restore --warnaserror
+
+      - name: Dry benchmark
+        run: dotnet run -c Release --project benchmarks/Kexiva.Benchmarks/Kexiva.Benchmarks.csproj --no-build --no-restore -- --filter "*SmokeBenchmark*" -j Dry
+
   pr-title:
     name: pr-title (Conventional Commits)
     if: github.event_name == 'pull_request'
