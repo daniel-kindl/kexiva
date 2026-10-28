@@ -1,0 +1,16 @@
+{
+  "stryker-config": {
+    "project": "Kexiva.csproj",
+    "test-projects": ["tests/Kexiva.Tests/Kexiva.Tests.csproj"],
+    "test-runner": "mtp",
+    "configuration": "Release",
+    "reporters": ["cleartext"],
+    "concurrency": 2,
+    "thresholds": {
+      "high": 80,
+      "low": 60,
+      "break": 0
+    },
+    "mutate": ["!**/*AssemblyInfo.cs", "!**/obj/**", "!**/bin/**"]
+  }
+}
