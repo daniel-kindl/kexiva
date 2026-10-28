@@ -1,6 +1,6 @@
 # 0003. Testing: xUnit, differential tests, coverage gate
 
-- Status: Accepted
+- Status: Superseded by 0006
 - Date: 2026-10-14
 
 ## Context

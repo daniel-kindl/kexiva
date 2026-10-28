@@ -64,6 +64,24 @@ public sealed class VerificationPolicyTests
     }
 
     /// <summary>
+    /// Verifies that coverage reads a Cobertura report whose name includes a coverlet.MTP timestamp.
+    /// </summary>
+    [Fact]
+    public void Coverage_ReadsStampedCoberturaReport()
+    {
+        using TemporaryDirectory repository = new();
+        string sourceDirectory = Path.Combine(repository.Path, "src", "Kexiva");
+        string resultsDirectory = Path.Combine(repository.Path, "results");
+        Directory.CreateDirectory(sourceDirectory);
+        Directory.CreateDirectory(resultsDirectory);
+        File.WriteAllText(Path.Combine(sourceDirectory, "Widget.cs"), "namespace Kexiva; public sealed class Widget { public int Value => 1; }");
+        string report = "<coverage><packages><package name=\"Kexiva\"><classes><class filename=\"Kexiva/Widget.cs\"><lines><line number=\"1\" hits=\"1\" /></lines></class></classes></package></packages></coverage>";
+        File.WriteAllText(Path.Combine(resultsDirectory, "coverage.cobertura.280326122803612.xml"), report);
+
+        Verify.Program.CheckCoverage(repository.Path, resultsDirectory);
+    }
+
+    /// <summary>
     /// Verifies that a source file under build output is not a production source.
     /// </summary>
     /// <param name="directoryName">The build-output directory name.</param>
@@ -281,7 +299,7 @@ public sealed class VerificationPolicyTests
             dotnet restore --locked-mode
             dotnet build -c Release --no-restore --warnaserror
             dotnet format --verify-no-changes --severity info --no-restore
-            dotnet test tests/Kexiva.Tests/Kexiva.Tests.csproj -c Release --no-build --settings eng/coverage.runsettings --collect:"XPlat Code Coverage" --results-directory "$results_directory"
+            dotnet test tests/Kexiva.Tests/Kexiva.Tests.csproj -c Release --no-build --results-directory "$results_directory" --coverlet --coverlet-output-format cobertura --coverlet-include "[Kexiva]*"
             dotnet test tests/Kexiva.Compatibility.Tests/Kexiva.Compatibility.Tests.csproj -c Release --no-build
             dotnet run --project eng/Kexiva.Verify/Kexiva.Verify.csproj -c Release --no-build -- "$results_directory"
             """);
@@ -291,7 +309,7 @@ public sealed class VerificationPolicyTests
             Invoke-DotNet { dotnet restore --locked-mode }
             Invoke-DotNet { dotnet build -c Release --no-restore --warnaserror }
             Invoke-DotNet { dotnet format --verify-no-changes --severity info --no-restore }
-            Invoke-DotNet { dotnet test tests/Kexiva.Tests/Kexiva.Tests.csproj -c Release --no-build --settings eng/coverage.runsettings --collect:"XPlat Code Coverage" --results-directory "$resultsDirectory" }
+            Invoke-DotNet { dotnet test tests/Kexiva.Tests/Kexiva.Tests.csproj -c Release --no-build --results-directory "$resultsDirectory" --coverlet --coverlet-output-format cobertura --coverlet-include "[Kexiva]*" }
             Invoke-DotNet { dotnet test tests/Kexiva.Compatibility.Tests/Kexiva.Compatibility.Tests.csproj -c Release --no-build }
             Invoke-DotNet { dotnet run --project eng/Kexiva.Verify/Kexiva.Verify.csproj -c Release --no-build -- "$resultsDirectory" }
             """);

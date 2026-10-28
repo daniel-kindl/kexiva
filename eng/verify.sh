@@ -31,7 +31,7 @@ echo "Checking formatting and analyzers..."
 dotnet format --verify-no-changes --severity info --no-restore
 
 echo "Running unit and architecture tests with coverage..."
-dotnet test tests/Kexiva.Tests/Kexiva.Tests.csproj -c Release --no-build --settings eng/coverage.runsettings --collect:"XPlat Code Coverage" --results-directory "$results_directory"
+dotnet test tests/Kexiva.Tests/Kexiva.Tests.csproj -c Release --no-build --results-directory "$results_directory" --coverlet --coverlet-output-format cobertura --coverlet-include "[Kexiva]*"
 
 echo "Running public API compatibility tests..."
 dotnet test tests/Kexiva.Compatibility.Tests/Kexiva.Compatibility.Tests.csproj -c Release --no-build
