@@ -29,7 +29,7 @@ Kexiva.Tests ──> Kexiva.Verify
 
 ## Compatibility
 
-Behavioral compatibility for M1 integer parsing and formatting is specified in [Integer parsing and formatting](../compatibility/integer-parsing-and-formatting.md). `UInt32` parsing is [`Kexiva.UInt32.TryParse`](../decisions/0008-uint32-tryparse-api.md). `Int32` parsing is [`Kexiva.Int32.TryParse`](../decisions/0009-int32-tryparse-api.md). `Int64` parsing is [`Kexiva.Int64.TryParse`](../decisions/0010-int64-tryparse-api.md).
+Behavioral compatibility for M1 integer parsing and formatting is specified in [Integer parsing and formatting](../compatibility/integer-parsing-and-formatting.md). `UInt32` parsing is [`Kexiva.UInt32.TryParse`](../decisions/0008-uint32-tryparse-api.md). `Int32` parsing is [`Kexiva.Int32.TryParse`](../decisions/0009-int32-tryparse-api.md). `Int64` parsing is [`Kexiva.Int64.TryParse`](../decisions/0010-int64-tryparse-api.md). `UInt64` parsing is [`Kexiva.UInt64.TryParse`](../decisions/0011-uint64-tryparse-api.md).
 
 ## Public API
 

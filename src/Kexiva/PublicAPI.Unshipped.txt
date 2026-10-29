@@ -29,3 +29,13 @@ static Kexiva.UInt32.TryParse(System.ReadOnlySpan<char> s, System.Globalization.
 static Kexiva.UInt32.TryParse(string? s, out uint result) -> bool
 static Kexiva.UInt32.TryParse(string? s, System.IFormatProvider? provider, out uint result) -> bool
 static Kexiva.UInt32.TryParse(string? s, System.Globalization.NumberStyles style, System.IFormatProvider? provider, out uint result) -> bool
+Kexiva.UInt64
+static Kexiva.UInt64.TryParse(System.ReadOnlySpan<byte> utf8Text, out ulong result) -> bool
+static Kexiva.UInt64.TryParse(System.ReadOnlySpan<byte> utf8Text, System.IFormatProvider? provider, out ulong result) -> bool
+static Kexiva.UInt64.TryParse(System.ReadOnlySpan<byte> utf8Text, System.Globalization.NumberStyles style, System.IFormatProvider? provider, out ulong result) -> bool
+static Kexiva.UInt64.TryParse(System.ReadOnlySpan<char> s, out ulong result) -> bool
+static Kexiva.UInt64.TryParse(System.ReadOnlySpan<char> s, System.IFormatProvider? provider, out ulong result) -> bool
+static Kexiva.UInt64.TryParse(System.ReadOnlySpan<char> s, System.Globalization.NumberStyles style, System.IFormatProvider? provider, out ulong result) -> bool
+static Kexiva.UInt64.TryParse(string? s, out ulong result) -> bool
+static Kexiva.UInt64.TryParse(string? s, System.IFormatProvider? provider, out ulong result) -> bool
+static Kexiva.UInt64.TryParse(string? s, System.Globalization.NumberStyles style, System.IFormatProvider? provider, out ulong result) -> bool

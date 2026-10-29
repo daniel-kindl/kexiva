@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 namespace Kexiva;
 
 /// <summary>
-/// Shared scan for <see cref="int"/>, <see cref="uint"/>, and <see cref="long"/>. Each policy owns overflow.
+/// Shared scan for <see cref="int"/>, <see cref="uint"/>, <see cref="long"/>, and <see cref="ulong"/>. Each policy owns overflow.
 /// </summary>
 internal static class IntegerParser
 {
@@ -15,6 +15,9 @@ internal static class IntegerParser
     private const int _int64DecimalDigitLimit = 19;
     private const int _int64HexDigitLimit = 16;
     private const int _int64BinaryDigitLimit = 64;
+    private const int _uint64DecimalDigitLimit = 20;
+    private const int _uint64HexDigitLimit = 16;
+    private const int _uint64BinaryDigitLimit = 64;
 
     private const int _stateSign = 0x0001;
     private const int _stateParens = 0x0002;
@@ -106,6 +109,28 @@ internal static class IntegerParser
         return TryParseCore<byte, ByteUnits, long, Int64Policy>(text, styles, info, out result);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool TryParse(ReadOnlySpan<char> text, NumberStyles styles, NumberFormatInfo info, out ulong result)
+    {
+        if ((styles & ~NumberStyles.Integer) == 0)
+        {
+            return TryParseUnsignedIntegerStyle64<char, CharUnits>(text, styles, info, out result);
+        }
+
+        return TryParseCore<char, CharUnits, ulong, UInt64Policy>(text, styles, info, out result);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool TryParse(ReadOnlySpan<byte> text, NumberStyles styles, NumberFormatInfo info, out ulong result)
+    {
+        if ((styles & ~NumberStyles.Integer) == 0)
+        {
+            return TryParseUnsignedIntegerStyle64<byte, ByteUnits>(text, styles, info, out result);
+        }
+
+        return TryParseCore<byte, ByteUnits, ulong, UInt64Policy>(text, styles, info, out result);
+    }
+
     private static bool TryParseCore<TUnit, TUnits, TNumber, TPolicy>(ReadOnlySpan<TUnit> text, NumberStyles styles, NumberFormatInfo info, out TNumber result)
         where TUnit : struct
         where TUnits : IUnits<TUnit>
@@ -119,6 +144,13 @@ internal static class IntegerParser
                 bool parsed64 = TryParseSignedIntegerStyle64<TUnit, TUnits>(text, styles, info, out long signed64);
                 result = Unsafe.BitCast<long, TNumber>(signed64);
                 return parsed64;
+            }
+
+            if (typeof(TNumber) == typeof(ulong))
+            {
+                bool parsedUnsigned64 = TryParseUnsignedIntegerStyle64<TUnit, TUnits>(text, styles, info, out ulong unsigned64);
+                result = Unsafe.BitCast<ulong, TNumber>(unsigned64);
+                return parsedUnsigned64;
             }
 
             if (TPolicy.IsSigned)
@@ -262,6 +294,124 @@ internal static class IntegerParser
         }
 
         return FinishTrailing<TUnit, TUnits, uint, UInt32Policy>(text, index, num, styles, overflow, answer, isNegative, preserveBits: false, out result);
+    }
+
+    // Keep this loop type-specific. The 20th digit can wrap ulong. Set overflow before that multiply.
+    private static bool TryParseUnsignedIntegerStyle64<TUnit, TUnits>(ReadOnlySpan<TUnit> text, NumberStyles styles, NumberFormatInfo info, out ulong result)
+        where TUnit : struct
+        where TUnits : IUnits<TUnit>
+    {
+        result = 0;
+        if (text.IsEmpty)
+        {
+            return false;
+        }
+
+        int index = 0;
+        uint num = TUnits.At(text, 0);
+        if ((styles & NumberStyles.AllowLeadingWhite) != 0 && IsWhite(num))
+        {
+            do
+            {
+                index++;
+                if ((uint)index >= (uint)text.Length)
+                {
+                    return false;
+                }
+
+                num = TUnits.At(text, index);
+            }
+            while (IsWhite(num));
+        }
+
+        bool isNegative = false;
+        if ((styles & NumberStyles.AllowLeadingSign) != 0 && !TryReadIntegerSign<TUnit, TUnits>(text, ref index, ref num, info, ref isNegative))
+        {
+            return false;
+        }
+
+        // A negative value overflows. Negative zero still succeeds.
+        bool overflow = isNegative;
+        if (!IsDigit(num))
+        {
+            return false;
+        }
+
+        if (num == '0')
+        {
+            do
+            {
+                index++;
+                if ((uint)index >= (uint)text.Length)
+                {
+                    result = 0;
+                    return true;
+                }
+
+                num = TUnits.At(text, index);
+            }
+            while (num == '0');
+
+            if (!IsDigit(num))
+            {
+                return FinishTrailing<TUnit, TUnits, ulong, UInt64Policy>(text, index, num, styles, overflow: false, answer: 0, isNegative: isNegative, preserveBits: false, out result);
+            }
+        }
+
+        ulong answer = num - '0';
+        index++;
+        for (int i = 0; i < _uint64DecimalDigitLimit - 2; i++)
+        {
+            if ((uint)index >= (uint)text.Length)
+            {
+                return CompleteUnsigned64(overflow, answer, out result);
+            }
+
+            num = TUnits.At(text, index);
+            if (!IsDigit(num))
+            {
+                return FinishTrailing<TUnit, TUnits, ulong, UInt64Policy>(text, index, num, styles, overflow, answer, isNegative, preserveBits: false, out result);
+            }
+
+            index++;
+            answer = (answer * 10) + (num - '0');
+        }
+
+        if ((uint)index >= (uint)text.Length)
+        {
+            return CompleteUnsigned64(overflow, answer, out result);
+        }
+
+        num = TUnits.At(text, index);
+        if (!IsDigit(num))
+        {
+            return FinishTrailing<TUnit, TUnits, ulong, UInt64Policy>(text, index, num, styles, overflow, answer, isNegative, preserveBits: false, out result);
+        }
+
+        index++;
+        const ulong maxValueDividedBy10 = 1844674407370955161UL;
+        overflow |= answer > maxValueDividedBy10 || (answer == maxValueDividedBy10 && num > '5');
+        answer = (answer * 10) + (num - '0');
+        if ((uint)index >= (uint)text.Length)
+        {
+            return CompleteUnsigned64(overflow, answer, out result);
+        }
+
+        num = TUnits.At(text, index);
+        while (IsDigit(num))
+        {
+            overflow = true;
+            index++;
+            if ((uint)index >= (uint)text.Length)
+            {
+                result = 0;
+                return false;
+            }
+
+            num = TUnits.At(text, index);
+        }
+
+        return FinishTrailing<TUnit, TUnits, ulong, UInt64Policy>(text, index, num, styles, overflow, answer, isNegative, preserveBits: false, out result);
     }
 
     private static bool TryParseSignedIntegerStyle64<TUnit, TUnits>(ReadOnlySpan<TUnit> text, NumberStyles styles, NumberFormatInfo info, out long result)
@@ -1143,6 +1293,20 @@ internal static class IntegerParser
         return true;
     }
 
+    // answer is already ulong. A value above ulong.MaxValue wraps before this call, so the overflow flag is the only check.
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool CompleteUnsigned64(bool overflow, ulong answer, out ulong result)
+    {
+        if (overflow)
+        {
+            result = 0;
+            return false;
+        }
+
+        result = answer;
+        return true;
+    }
+
     // The caller accepted at most 9 digits. The magnitude fits in a positive int.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool CompleteSignedInRange(ulong answer, bool isNegative, out int result)
@@ -1806,6 +1970,103 @@ internal static class IntegerParser
             }
 
             value = (long)parsed;
+            return true;
+        }
+    }
+
+    private readonly struct UInt64Policy : IPolicy<ulong>
+    {
+        public static bool IsSigned
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => false;
+        }
+
+        public static int DecimalDigitLimit
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => _uint64DecimalDigitLimit;
+        }
+
+        public static int HexDigitLimit
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => _uint64HexDigitLimit;
+        }
+
+        public static int BinaryDigitLimit
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => _uint64BinaryDigitLimit;
+        }
+
+        public static ulong MaxValueDividedBy10
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => 1844674407370955161UL;
+        }
+
+        public static bool KeepNegativeZeroWithDecimal
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool InitialOverflow(bool isNegative)
+        {
+            return isNegative;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint LastDigitLimit(bool isNegative)
+        {
+            _ = isNegative;
+            return (uint)'5';
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryFinish(bool overflow, ulong answer, bool isNegative, bool preserveBits, out ulong result)
+        {
+            // Unsigned overflow already includes a negative sign. Radix calls do not use these arguments.
+            _ = isNegative;
+            _ = preserveBits;
+            return CompleteUnsigned64(overflow, answer, out result);
+        }
+
+        public static bool TryFromBuffer(ref NumberState number, out ulong value)
+        {
+            value = 0;
+            int scale = number.Scale;
+            if (scale > DecimalDigitLimit || scale < number.DigitsCount || number.IsNegative || number.HasNonZeroTail)
+            {
+                return false;
+            }
+
+            int digitIndex = 0;
+            ulong parsed = 0;
+            while (--scale >= 0)
+            {
+                if (parsed > MaxValueDividedBy10)
+                {
+                    return false;
+                }
+
+                parsed *= 10;
+                if (digitIndex < number.DigitsCount)
+                {
+                    ulong added = parsed + (ulong)(number.Digits[digitIndex] - '0');
+                    digitIndex++;
+                    if (added < parsed)
+                    {
+                        return false;
+                    }
+
+                    parsed = added;
+                }
+            }
+
+            value = parsed;
             return true;
         }
     }
