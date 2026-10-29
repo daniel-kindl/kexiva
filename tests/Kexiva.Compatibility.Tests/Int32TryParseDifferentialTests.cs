@@ -231,6 +231,39 @@ public sealed class Int32TryParseDifferentialTests
     }
 
     /// <summary>
+    /// Verifies overflow for long digit runs, large exponents, and repeated leading zeros.
+    /// </summary>
+    [Fact]
+    public void LongInputs_MatchReferenceTryParse()
+    {
+        CultureInfo invariant = CultureInfo.InvariantCulture;
+        string zeros = new('0', 4096);
+        string nines = new('9', 2048);
+        string ones = new('1', 1024);
+
+        AssertAll(nines, NumberStyles.Integer, invariant);
+        AssertAll(ones, NumberStyles.Integer, invariant);
+        AssertAll(zeros + "123", NumberStyles.Integer, invariant);
+        AssertAll(zeros + "2147483647", NumberStyles.Integer, invariant);
+        AssertAll(zeros + "2147483648", NumberStyles.Integer, invariant);
+        AssertAll(zeros + "-2147483648", NumberStyles.Integer, invariant);
+        AssertAll("-" + zeros + "1", NumberStyles.Integer, invariant);
+        AssertAll(zeros + "4294967295", NumberStyles.Integer, invariant);
+        AssertAll(zeros + "4294967296", NumberStyles.Integer, invariant);
+        AssertAll(nines + "a", NumberStyles.Integer, invariant);
+
+        AssertAll("1e" + new string('9', 40), NumberStyles.Float, invariant);
+        AssertAll("0e" + new string('9', 40), NumberStyles.Float, invariant);
+        AssertAll("1e" + new string('0', 30) + "2", NumberStyles.Float, invariant);
+        AssertAll("1" + new string('0', 100) + "e10", NumberStyles.Float, invariant);
+
+        AssertAll(new('F', 64), NumberStyles.HexNumber, invariant);
+        AssertAll(zeros + "FF", NumberStyles.HexNumber, invariant);
+        AssertAll(new('1', 64), NumberStyles.BinaryNumber, invariant);
+        AssertAll(zeros + "101", NumberStyles.BinaryNumber, invariant);
+    }
+
+    /// <summary>
     /// Verifies currency placement, empty signs, alternate hyphens, and a long currency symbol.
     /// </summary>
     [Fact]
