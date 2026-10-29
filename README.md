@@ -4,7 +4,7 @@ High-performance .NET library providing optimized alternatives to selected stand
 
 **Core philosophy: Same API. Same behavior. Better performance.**
 
-Status: M1, Integer Parsing and Formatting. UInt32 parsing is the first public API.
+Status: M1, Integer Parsing and Formatting. UInt32 and Int32 parsing are public.
 
 ## Build and test
 

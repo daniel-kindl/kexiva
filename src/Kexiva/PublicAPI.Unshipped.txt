@@ -1,4 +1,14 @@
 #nullable enable
+Kexiva.Int32
+static Kexiva.Int32.TryParse(System.ReadOnlySpan<byte> utf8Text, out int result) -> bool
+static Kexiva.Int32.TryParse(System.ReadOnlySpan<byte> utf8Text, System.IFormatProvider? provider, out int result) -> bool
+static Kexiva.Int32.TryParse(System.ReadOnlySpan<byte> utf8Text, System.Globalization.NumberStyles style, System.IFormatProvider? provider, out int result) -> bool
+static Kexiva.Int32.TryParse(System.ReadOnlySpan<char> s, out int result) -> bool
+static Kexiva.Int32.TryParse(System.ReadOnlySpan<char> s, System.IFormatProvider? provider, out int result) -> bool
+static Kexiva.Int32.TryParse(System.ReadOnlySpan<char> s, System.Globalization.NumberStyles style, System.IFormatProvider? provider, out int result) -> bool
+static Kexiva.Int32.TryParse(string? s, out int result) -> bool
+static Kexiva.Int32.TryParse(string? s, System.IFormatProvider? provider, out int result) -> bool
+static Kexiva.Int32.TryParse(string? s, System.Globalization.NumberStyles style, System.IFormatProvider? provider, out int result) -> bool
 Kexiva.UInt32
 static Kexiva.UInt32.TryParse(System.ReadOnlySpan<byte> utf8Text, out uint result) -> bool
 static Kexiva.UInt32.TryParse(System.ReadOnlySpan<byte> utf8Text, System.IFormatProvider? provider, out uint result) -> bool
