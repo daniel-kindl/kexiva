@@ -49,6 +49,8 @@ The Int32 comparison uses this input set for string `TryParse` and for UTF-8 `Tr
 
 The shared scan comparison is [results/2026-10-29-shared-integer-scan.md](results/2026-10-29-shared-integer-scan.md). That run keeps a separate digit loop for `int` and for `uint`.
 
+The Int64 comparison uses this input set for string `TryParse` and for UTF-8 `TryParse`. Those comparisons are separate benchmark classes. Each class uses the .NET method as its baseline. The filter is `*.Int64ParsingComparison.*` and `*.Int64Utf8ParsingComparison.*`. The recorded run is [results/2026-10-29-int64-parsing.md](results/2026-10-29-int64-parsing.md). The decimal digit loop for `long` stays separate from the 32-bit loops.
+
 ## Later comparisons
 
 Keep one concrete benchmark class for each integer type. A shared generic benchmark can change discovery and the measured code. Revisit that split only when more numeric types make the duplication costly.
