@@ -14,3 +14,4 @@ Each significant decision has a numbered record. Copy [0000-template.md](0000-te
 | [0008](0008-uint32-tryparse-api.md) | UInt32 TryParse API | Accepted |
 | [0009](0009-int32-tryparse-api.md) | Int32 TryParse API | Accepted |
 | [0010](0010-int64-tryparse-api.md) | Int64 TryParse API | Accepted |
+| [0011](0011-uint64-tryparse-api.md) | UInt64 TryParse API | Accepted |
