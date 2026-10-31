@@ -4,7 +4,7 @@ High-performance .NET library providing optimized alternatives to selected stand
 
 **Core philosophy: Same API. Same behavior. Better performance.**
 
-Status: M1, Integer Parsing and Formatting. UInt32, Int32, Int64, and UInt64 parsing are public.
+Status: M1, Integer Parsing and Formatting. UInt32, Int32, Int64, and UInt64 expose `TryParse` and `Parse`.
 
 ## Build and test
 
