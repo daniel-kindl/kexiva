@@ -62,3 +62,9 @@ A comparison of Kexiva with .NET needs the same input set on every measured oper
 Check the benchmark inputs in separate tests. Do not put those checks inside a timed benchmark method. The baseline methods ignore the `TryParse` and `TryFormat` success flags so the timed path stays the parse or format call.
 
 The Int64 UTF-8 row in the recorded run has a wide spread. See the results document.
+
+## Parse comparisons
+
+The four concrete `*ParseComparison` classes compare .NET and Kexiva `Parse` on string, char-span, and UTF-8 inputs. Each class uses short, medium, minimum, maximum, malformed, and overflow values. Each text form has its own .NET baseline. Setup encodes UTF-8 and checks expected results outside the timed methods. Failure rows include the thrown exception and the benchmark catch.
+
+The [2026-10-31 Parse results](results/2026-10-31-integer-parse.md) record the exact command, environment, latency, derived throughput, and allocations. The run uses three measurement iterations and is not a regression gate.

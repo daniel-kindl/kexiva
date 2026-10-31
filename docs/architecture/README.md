@@ -31,6 +31,8 @@ Kexiva.Tests ──> Kexiva.Verify
 
 Behavioral compatibility for M1 integer parsing and formatting is specified in [Integer parsing and formatting](../compatibility/integer-parsing-and-formatting.md). `UInt32` parsing is [`Kexiva.UInt32.TryParse`](../decisions/0008-uint32-tryparse-api.md). `Int32` parsing is [`Kexiva.Int32.TryParse`](../decisions/0009-int32-tryparse-api.md). `Int64` parsing is [`Kexiva.Int64.TryParse`](../decisions/0010-int64-tryparse-api.md). `UInt64` parsing is [`Kexiva.UInt64.TryParse`](../decisions/0011-uint64-tryparse-api.md).
 
+Each type also exposes the eight .NET `Parse` overloads. [ADR 0012](../decisions/0012-integer-parse-api.md) records the successful parse path and failure fallback.
+
 ## Public API
 
 The Public API Analyzer fails the build on an unrecorded public API change. Add new API to `src/Kexiva/PublicAPI.Unshipped.txt`. Move it to `PublicAPI.Shipped.txt` at release.
