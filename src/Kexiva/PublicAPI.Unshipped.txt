@@ -1,5 +1,13 @@
 #nullable enable
 Kexiva.Int32
+static Kexiva.Int32.Parse(string! s) -> int
+static Kexiva.Int32.Parse(string! s, System.Globalization.NumberStyles style) -> int
+static Kexiva.Int32.Parse(string! s, System.IFormatProvider? provider) -> int
+static Kexiva.Int32.Parse(string! s, System.Globalization.NumberStyles style, System.IFormatProvider? provider) -> int
+static Kexiva.Int32.Parse(System.ReadOnlySpan<char> s, System.Globalization.NumberStyles style = System.Globalization.NumberStyles.Integer, System.IFormatProvider? provider = null) -> int
+static Kexiva.Int32.Parse(System.ReadOnlySpan<char> s, System.IFormatProvider? provider) -> int
+static Kexiva.Int32.Parse(System.ReadOnlySpan<byte> utf8Text, System.Globalization.NumberStyles style = System.Globalization.NumberStyles.Integer, System.IFormatProvider? provider = null) -> int
+static Kexiva.Int32.Parse(System.ReadOnlySpan<byte> utf8Text, System.IFormatProvider? provider) -> int
 static Kexiva.Int32.TryParse(System.ReadOnlySpan<byte> utf8Text, out int result) -> bool
 static Kexiva.Int32.TryParse(System.ReadOnlySpan<byte> utf8Text, System.IFormatProvider? provider, out int result) -> bool
 static Kexiva.Int32.TryParse(System.ReadOnlySpan<byte> utf8Text, System.Globalization.NumberStyles style, System.IFormatProvider? provider, out int result) -> bool
@@ -10,6 +18,14 @@ static Kexiva.Int32.TryParse(string? s, out int result) -> bool
 static Kexiva.Int32.TryParse(string? s, System.IFormatProvider? provider, out int result) -> bool
 static Kexiva.Int32.TryParse(string? s, System.Globalization.NumberStyles style, System.IFormatProvider? provider, out int result) -> bool
 Kexiva.Int64
+static Kexiva.Int64.Parse(string! s) -> long
+static Kexiva.Int64.Parse(string! s, System.Globalization.NumberStyles style) -> long
+static Kexiva.Int64.Parse(string! s, System.IFormatProvider? provider) -> long
+static Kexiva.Int64.Parse(string! s, System.Globalization.NumberStyles style, System.IFormatProvider? provider) -> long
+static Kexiva.Int64.Parse(System.ReadOnlySpan<char> s, System.Globalization.NumberStyles style = System.Globalization.NumberStyles.Integer, System.IFormatProvider? provider = null) -> long
+static Kexiva.Int64.Parse(System.ReadOnlySpan<char> s, System.IFormatProvider? provider) -> long
+static Kexiva.Int64.Parse(System.ReadOnlySpan<byte> utf8Text, System.Globalization.NumberStyles style = System.Globalization.NumberStyles.Integer, System.IFormatProvider? provider = null) -> long
+static Kexiva.Int64.Parse(System.ReadOnlySpan<byte> utf8Text, System.IFormatProvider? provider) -> long
 static Kexiva.Int64.TryParse(System.ReadOnlySpan<byte> utf8Text, out long result) -> bool
 static Kexiva.Int64.TryParse(System.ReadOnlySpan<byte> utf8Text, System.IFormatProvider? provider, out long result) -> bool
 static Kexiva.Int64.TryParse(System.ReadOnlySpan<byte> utf8Text, System.Globalization.NumberStyles style, System.IFormatProvider? provider, out long result) -> bool
@@ -20,6 +36,14 @@ static Kexiva.Int64.TryParse(string? s, out long result) -> bool
 static Kexiva.Int64.TryParse(string? s, System.IFormatProvider? provider, out long result) -> bool
 static Kexiva.Int64.TryParse(string? s, System.Globalization.NumberStyles style, System.IFormatProvider? provider, out long result) -> bool
 Kexiva.UInt32
+static Kexiva.UInt32.Parse(string! s) -> uint
+static Kexiva.UInt32.Parse(string! s, System.Globalization.NumberStyles style) -> uint
+static Kexiva.UInt32.Parse(string! s, System.IFormatProvider? provider) -> uint
+static Kexiva.UInt32.Parse(string! s, System.Globalization.NumberStyles style, System.IFormatProvider? provider) -> uint
+static Kexiva.UInt32.Parse(System.ReadOnlySpan<char> s, System.Globalization.NumberStyles style = System.Globalization.NumberStyles.Integer, System.IFormatProvider? provider = null) -> uint
+static Kexiva.UInt32.Parse(System.ReadOnlySpan<char> s, System.IFormatProvider? provider) -> uint
+static Kexiva.UInt32.Parse(System.ReadOnlySpan<byte> utf8Text, System.Globalization.NumberStyles style = System.Globalization.NumberStyles.Integer, System.IFormatProvider? provider = null) -> uint
+static Kexiva.UInt32.Parse(System.ReadOnlySpan<byte> utf8Text, System.IFormatProvider? provider) -> uint
 static Kexiva.UInt32.TryParse(System.ReadOnlySpan<byte> utf8Text, out uint result) -> bool
 static Kexiva.UInt32.TryParse(System.ReadOnlySpan<byte> utf8Text, System.IFormatProvider? provider, out uint result) -> bool
 static Kexiva.UInt32.TryParse(System.ReadOnlySpan<byte> utf8Text, System.Globalization.NumberStyles style, System.IFormatProvider? provider, out uint result) -> bool
@@ -30,6 +54,14 @@ static Kexiva.UInt32.TryParse(string? s, out uint result) -> bool
 static Kexiva.UInt32.TryParse(string? s, System.IFormatProvider? provider, out uint result) -> bool
 static Kexiva.UInt32.TryParse(string? s, System.Globalization.NumberStyles style, System.IFormatProvider? provider, out uint result) -> bool
 Kexiva.UInt64
+static Kexiva.UInt64.Parse(string! s) -> ulong
+static Kexiva.UInt64.Parse(string! s, System.Globalization.NumberStyles style) -> ulong
+static Kexiva.UInt64.Parse(string! s, System.IFormatProvider? provider) -> ulong
+static Kexiva.UInt64.Parse(string! s, System.Globalization.NumberStyles style, System.IFormatProvider? provider) -> ulong
+static Kexiva.UInt64.Parse(System.ReadOnlySpan<char> s, System.Globalization.NumberStyles style = System.Globalization.NumberStyles.Integer, System.IFormatProvider? provider = null) -> ulong
+static Kexiva.UInt64.Parse(System.ReadOnlySpan<char> s, System.IFormatProvider? provider) -> ulong
+static Kexiva.UInt64.Parse(System.ReadOnlySpan<byte> utf8Text, System.Globalization.NumberStyles style = System.Globalization.NumberStyles.Integer, System.IFormatProvider? provider = null) -> ulong
+static Kexiva.UInt64.Parse(System.ReadOnlySpan<byte> utf8Text, System.IFormatProvider? provider) -> ulong
 static Kexiva.UInt64.TryParse(System.ReadOnlySpan<byte> utf8Text, out ulong result) -> bool
 static Kexiva.UInt64.TryParse(System.ReadOnlySpan<byte> utf8Text, System.IFormatProvider? provider, out ulong result) -> bool
 static Kexiva.UInt64.TryParse(System.ReadOnlySpan<byte> utf8Text, System.Globalization.NumberStyles style, System.IFormatProvider? provider, out ulong result) -> bool
